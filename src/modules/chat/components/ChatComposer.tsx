@@ -71,7 +71,7 @@ export function ChatComposer({ onSend }: ChatComposerProps) {
             onClick={handleSend}
             disabled={!value.trim()}
             className={cn(
-              "p-1.5 rounded-lg transition-colors shrink-0",
+              "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
               value.trim()
                 ? "text-accent hover:bg-accent/10"
                 : "text-text-secondary opacity-40 cursor-not-allowed"

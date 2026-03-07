@@ -30,10 +30,12 @@
 
 html {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   height: 100%;
+  overflow: hidden;
   background-color: #09090b;
   color: #fafafa;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -57,8 +59,10 @@ body {
   background: #52525b;
 }
 
-/* Focus ring */
-:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
+/* Focus ring — inside @layer base so Tailwind utilities (outline-none) can override it */
+@layer base {
+  :focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+  }
 }
