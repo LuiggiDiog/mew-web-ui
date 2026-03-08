@@ -5,7 +5,6 @@ const GOOGLE_USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1/userin
 interface GoogleOAuthConfig {
   clientId: string;
   clientSecret: string;
-  redirectUri: string;
 }
 
 interface GoogleUserInfo {
@@ -18,22 +17,43 @@ interface GoogleUserInfo {
 function getGoogleOAuthConfig(): GoogleOAuthConfig | null {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI?.trim();
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     return null;
   }
 
-  return { clientId, clientSecret, redirectUri };
+  return { clientId, clientSecret };
 }
 
-export function buildGoogleAuthUrl(state: string): string | null {
+export function resolveGoogleRedirectUri(requestOrigin: string): string {
+  const configured = process.env.GOOGLE_REDIRECT_URI?.trim();
+  if (configured) return configured;
+  return `${requestOrigin}/api/auth/google/callback`;
+}
+
+export function resolveRequestOrigin(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (forwardedHost) {
+    return `${forwardedProto ?? "https"}://${forwardedHost}`;
+  }
+
+  const host = request.headers.get("host");
+  if (host) {
+    const protocol = new URL(request.url).protocol;
+    return `${protocol}//${host}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
+export function buildGoogleAuthUrl(state: string, redirectUri: string): string | null {
   const config = getGoogleOAuthConfig();
   if (!config) return null;
 
   const params = new URLSearchParams({
     client_id: config.clientId,
-    redirect_uri: config.redirectUri,
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: "openid email profile",
     access_type: "online",
@@ -44,7 +64,10 @@ export function buildGoogleAuthUrl(state: string): string | null {
   return `${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`;
 }
 
-export async function exchangeCodeForGoogleUser(code: string): Promise<GoogleUserInfo | null> {
+export async function exchangeCodeForGoogleUser(
+  code: string,
+  redirectUri: string
+): Promise<GoogleUserInfo | null> {
   const config = getGoogleOAuthConfig();
   if (!config) return null;
 
@@ -55,7 +78,7 @@ export async function exchangeCodeForGoogleUser(code: string): Promise<GoogleUse
       code,
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      redirect_uri: config.redirectUri,
+      redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
   });

@@ -33,6 +33,7 @@ const mockSession = {
   email: undefined as string | undefined,
   displayName: undefined as string | undefined,
   oauthState: "oauth-state",
+  oauthRedirectUri: "http://localhost:3000/api/auth/google/callback",
   save: vi.fn(),
 };
 
@@ -42,6 +43,7 @@ beforeEach(() => {
   mockSession.email = undefined;
   mockSession.displayName = undefined;
   mockSession.oauthState = "oauth-state";
+  mockSession.oauthRedirectUri = "http://localhost:3000/api/auth/google/callback";
 
   vi.mocked(getSession).mockResolvedValue(mockSession as never);
 

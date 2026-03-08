@@ -3,10 +3,15 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getSession } from "@/modules/auth/lib/session";
-import { exchangeCodeForGoogleUser } from "@/modules/auth/lib/google-oauth";
+import {
+  exchangeCodeForGoogleUser,
+  resolveGoogleRedirectUri,
+  resolveRequestOrigin,
+} from "@/modules/auth/lib/google-oauth";
 
 function redirectWithError(request: Request, error: string) {
-  return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+  const origin = resolveRequestOrigin(request);
+  return NextResponse.redirect(new URL(`/login?error=${error}`, origin));
 }
 
 export async function GET(request: Request) {
@@ -20,7 +25,9 @@ export async function GET(request: Request) {
     return redirectWithError(request, "oauth_state");
   }
 
-  const profile = await exchangeCodeForGoogleUser(code);
+  const requestOrigin = resolveRequestOrigin(request);
+  const redirectUri = session.oauthRedirectUri ?? resolveGoogleRedirectUri(requestOrigin);
+  const profile = await exchangeCodeForGoogleUser(code, redirectUri);
   if (!profile) return redirectWithError(request, "oauth_exchange");
   if (!profile.email_verified) return redirectWithError(request, "oauth_email_unverified");
 
@@ -52,7 +59,8 @@ export async function GET(request: Request) {
   session.email = user.email;
   session.displayName = user.displayName;
   session.oauthState = undefined;
+  session.oauthRedirectUri = undefined;
   await session.save();
 
-  return NextResponse.redirect(new URL("/chat", request.url));
+  return NextResponse.redirect(new URL("/chat", requestOrigin));
 }

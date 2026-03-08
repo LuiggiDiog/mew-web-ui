@@ -9,12 +9,14 @@ import { GET } from "./route";
 
 const mockSession = {
   oauthState: undefined as string | undefined,
+  oauthRedirectUri: undefined as string | undefined,
   save: vi.fn(),
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockSession.oauthState = undefined;
+  mockSession.oauthRedirectUri = undefined;
   vi.mocked(getSession).mockResolvedValue(mockSession as never);
   process.env.GOOGLE_CLIENT_ID = "google-client-id";
   process.env.GOOGLE_CLIENT_SECRET = "google-client-secret";
@@ -25,7 +27,7 @@ describe("GET /api/auth/google/start", () => {
   it("returns 503 when oauth is not configured", async () => {
     process.env.GOOGLE_CLIENT_ID = "";
 
-    const response = await GET();
+    const response = await GET(new Request("http://localhost:3000/api/auth/google/start"));
 
     expect(response.status).toBe(503);
     const data = await response.json();
@@ -33,7 +35,7 @@ describe("GET /api/auth/google/start", () => {
   });
 
   it("redirects to google auth url and saves oauth state", async () => {
-    const response = await GET();
+    const response = await GET(new Request("http://localhost:3000/api/auth/google/start"));
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
@@ -50,7 +52,41 @@ describe("GET /api/auth/google/start", () => {
     expect(redirectUrl.searchParams.get("scope")).toContain("openid");
 
     expect(mockSession.oauthState).toBeTruthy();
+    expect(mockSession.oauthRedirectUri).toBe("http://localhost:3000/api/auth/google/callback");
     expect(mockSession.save).toHaveBeenCalledTimes(1);
     expect(redirectUrl.searchParams.get("state")).toBe(mockSession.oauthState);
+  });
+
+  it("builds redirect uri from request origin when env is not set", async () => {
+    process.env.GOOGLE_REDIRECT_URI = "";
+
+    const response = await GET(new Request("https://example.ngrok.app/api/auth/google/start"));
+    const location = response.headers.get("location");
+    const redirectUrl = new URL(location!);
+
+    expect(redirectUrl.searchParams.get("redirect_uri")).toBe(
+      "https://example.ngrok.app/api/auth/google/callback"
+    );
+    expect(mockSession.oauthRedirectUri).toBe("https://example.ngrok.app/api/auth/google/callback");
+  });
+
+  it("prefers forwarded headers for origin behind reverse proxy", async () => {
+    process.env.GOOGLE_REDIRECT_URI = "";
+
+    const req = new Request("http://localhost:3000/api/auth/google/start", {
+      headers: {
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "proxy.ngrok.app",
+      },
+    });
+
+    const response = await GET(req);
+    const location = response.headers.get("location");
+    const redirectUrl = new URL(location!);
+
+    expect(redirectUrl.searchParams.get("redirect_uri")).toBe(
+      "https://proxy.ngrok.app/api/auth/google/callback"
+    );
+    expect(mockSession.oauthRedirectUri).toBe("https://proxy.ngrok.app/api/auth/google/callback");
   });
 });

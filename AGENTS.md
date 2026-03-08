@@ -90,8 +90,8 @@ Goal: convert the prototype into a working application.
 Delivered:
 - PostgreSQL via Docker (docker-compose.yml, two containers: main + test)
 - Drizzle ORM with full schema (users, conversations, messages, providers, settings)
-- Real auth: bcryptjs + iron-session (httpOnly cookies), middleware.ts route protection
-- API routes: /api/auth/login|logout|me, /api/chat (streaming), /api/conversations (CRUD), /api/providers, /api/providers/ollama/health|models, /api/settings
+- Real auth: Google OAuth for new users + email/password for manual DB users, bcryptjs + iron-session (httpOnly cookies), middleware.ts route protection
+- API routes: /api/auth/login|logout|me, /api/auth/google/start|callback, /api/chat (streaming), /api/conversations (CRUD), /api/providers, /api/providers/ollama/health|models, /api/settings
 - Ollama streaming integration (OllamaClient with isConnected, listModels, chat generator)
 - Full conversation + message persistence
 - Settings persistence per user
@@ -142,6 +142,11 @@ Potential inclusions:
 - Never send conversation data to third-party analytics or error-reporting services
 - No telemetry
 - All AI calls go through internal API routes (Phase 2+), never directly from the client
+
+### Auth rules
+- New user registration/authentication must be Google OAuth only
+- Email/password login is allowed only for users created manually in the database
+- Keep Google OAuth callback handling on internal API routes (`/api/auth/google/start`, `/api/auth/google/callback`)
 
 ### Zustand = UI state only
 The Zustand store (`chatStore.ts`) holds only ephemeral UI state:

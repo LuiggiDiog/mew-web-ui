@@ -53,6 +53,8 @@ GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 ```
 
+`GOOGLE_REDIRECT_URI` is optional if you want automatic origin-based behavior (localhost/ngrok).
+
 Other commands:
 
 ```bash

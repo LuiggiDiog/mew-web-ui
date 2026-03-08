@@ -5,6 +5,7 @@ export interface SessionData {
   email?: string;
   displayName?: string;
   oauthState?: string;
+  oauthRedirectUri?: string;
 }
 
 export const sessionOptions: SessionOptions = {
