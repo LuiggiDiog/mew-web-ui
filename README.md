@@ -1,8 +1,8 @@
-# Mew WebUI — Private AI Workspace
+﻿# Mew WebUI â€” Private AI Workspace
 
 A private, self-hosted web interface for interacting with local and external AI models.
 
-> **Current phase: Phase 2 — Core Development (complete)**
+> **Current phase: Phase 2 â€” Core Development (complete)**
 > Real auth, PostgreSQL, Ollama streaming, full conversation persistence.
 
 ---
@@ -13,7 +13,23 @@ A personal AI workspace that runs entirely on your machine. Connect local models
 or external providers like OpenAI and Anthropic. No data leaves your machine unless you configure
 an external provider.
 
-Designed to feel like a focused work tool — clean, fast, and private.
+Designed to feel like a focused work tool â€” clean, fast, and private.
+
+---
+
+## Why "Mew WebUI"?
+
+The name has two intentional meanings:
+
+- A playful nod to cats ("mew")
+- "Me New WebUI": a personal take on the open web UI concept
+
+Mew WebUI is inspired by tools like Open WebUI, but with a sharper focus on:
+
+- Simplicity: minimal interface, low friction, and fast daily use
+- Privacy: local-first by default, no telemetry, and no prompt logging
+- Personalization: built to be your own workspace, not a shared dashboard
+- Open source: transparent, inspectable, and easy to extend
 
 ---
 
@@ -43,7 +59,7 @@ ollama serve
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — redirects to `/login`, then `/chat`.
+Open [http://localhost:3000](http://localhost:3000) â€” redirects to `/login`, then `/chat`.
 
 For Google sign-in, also set:
 
@@ -83,7 +99,7 @@ When enabled, `/api/providers/ollama/models` only returns:
 
 - Login / logout with real auth (Google OAuth for new users + email/password for manual DB users)
 - Route protection via middleware
-- PostgreSQL database (Drizzle ORM — users, conversations, messages, providers, settings)
+- PostgreSQL database (Drizzle ORM â€” users, conversations, messages, providers, settings)
 - Ollama streaming integration (real-time token streaming)
 - Full conversation + message persistence
 - Conversation list fetched from DB with real date grouping
@@ -100,19 +116,19 @@ When enabled, `/api/providers/ollama/models` only returns:
 
 ```
 src/
-  app/                    — Next.js App Router pages and layouts
-    (auth)/login/         — Login page
-    (private)/            — App shell (chat + settings)
-    layout.tsx            — Root layout with Sileo toasts
-    globals.css           — Design tokens (Tailwind v4 @theme)
+  app/                    â€” Next.js App Router pages and layouts
+    (auth)/login/         â€” Login page
+    (private)/            â€” App shell (chat + settings)
+    layout.tsx            â€” Root layout with Sileo toasts
+    globals.css           â€” Design tokens (Tailwind v4 @theme)
   modules/
-    auth/                 — Auth types, mocks, components
-    chat/                 — Chat components, Zustand store, mocks
-    conversations/        — Conversation list, mocks, types
-    providers/            — Provider types, mocks, components
-    settings/             — Settings components, mocks, types
-    shared/               — Button, Badge, Avatar, icons, hooks, utils
-  db/                     — Database layer (placeholder, Phase 2)
+    auth/                 â€” Auth types, mocks, components
+    chat/                 â€” Chat components, Zustand store, mocks
+    conversations/        â€” Conversation list, mocks, types
+    providers/            â€” Provider types, mocks, components
+    settings/             â€” Settings components, mocks, types
+    shared/               â€” Button, Badge, Avatar, icons, hooks, utils
+  db/                     â€” Database layer (placeholder, Phase 2)
 ```
 
 See [AGENTS.md](./AGENTS.md) for the full project guide, roadmap, and rules.
@@ -145,6 +161,7 @@ See [AGENTS.md](./AGENTS.md) for the full project guide, roadmap, and rules.
 
 ## Roadmap
 
-- **Phase 1** (complete): UI prototype — screens, navigation, mocks
-- **Phase 2** (complete): Core development — real auth, PostgreSQL, Ollama streaming, TDD
-- **Phase 3** (next): Hardening — advanced features, performance, security
+- **Phase 1** (complete): UI prototype â€” screens, navigation, mocks
+- **Phase 2** (complete): Core development â€” real auth, PostgreSQL, Ollama streaming, TDD
+- **Phase 3** (next): Hardening â€” advanced features, performance, security
+
