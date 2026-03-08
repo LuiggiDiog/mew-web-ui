@@ -98,7 +98,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   return (
     <>
       <main
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto flex flex-col-reverse"
         role="main"
         aria-label="Conversation messages"
         aria-busy={streaming}

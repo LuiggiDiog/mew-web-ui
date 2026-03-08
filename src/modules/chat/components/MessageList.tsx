@@ -10,9 +10,13 @@ interface MessageListProps {
 
 export function MessageList({ messages }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevLength = useRef<number>(messages.length);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > prevLength.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevLength.current = messages.length;
   }, [messages]);
 
   return (
