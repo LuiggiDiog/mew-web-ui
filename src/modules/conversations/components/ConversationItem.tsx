@@ -57,7 +57,6 @@ export function ConversationItem({
         <ContextMenu.Portal>
           <ContextMenu.Content
             className="z-40 min-w-40 rounded-lg border border-border bg-surface-elevated p-1 shadow-lg"
-            sideOffset={8}
           >
             <ContextMenu.Item
               onSelect={() => setConfirmOpen(true)}

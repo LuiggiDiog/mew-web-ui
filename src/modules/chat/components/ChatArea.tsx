@@ -12,6 +12,38 @@ interface ChatAreaProps {
   initialMessages: Message[];
 }
 
+async function readStream(
+  res: Response,
+  messageId: string,
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+): Promise<boolean> {
+  if (!res.ok || !res.body) {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, content: "Error: could not get response." } : m
+      )
+    );
+    return false;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let accumulated = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    accumulated += decoder.decode(value, { stream: true });
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, content: accumulated } : m
+      )
+    );
+  }
+
+  return true;
+}
+
 export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   const router = useRouter();
   const { activeModel, activeProvider, setStreamingMessageId } = useChatStore();
@@ -56,31 +88,8 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           }),
         });
 
-        if (!res.ok || !res.body) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, content: "Error: could not get response." } : m
-            )
-          );
-          return;
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          accumulated += decoder.decode(value, { stream: true });
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, content: accumulated } : m
-            )
-          );
-        }
-
-        router.refresh();
+        const ok = await readStream(res, assistantId, setMessages);
+        if (ok) router.refresh();
       } catch {
         setMessages((prev) =>
           prev.map((m) =>
@@ -95,6 +104,46 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     [conversationId, activeModel, activeProvider, streaming, router, setStreamingMessageId]
   );
 
+  const handleRegenerate = useCallback(async () => {
+    if (streaming) return;
+
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "assistant") return;
+
+    const targetId = lastMsg.id;
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === targetId ? { ...m, content: "", model: activeModel } : m
+      )
+    );
+    setStreaming(true);
+    setStreamingMessageId(targetId);
+
+    try {
+      const res = await fetch("/api/chat/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          model: activeModel,
+        }),
+      });
+
+      const ok = await readStream(res, targetId, setMessages);
+      if (ok) router.refresh();
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === targetId ? { ...m, content: "Error: request failed." } : m
+        )
+      );
+    } finally {
+      setStreaming(false);
+      setStreamingMessageId(null);
+    }
+  }, [conversationId, activeModel, messages, streaming, router, setStreamingMessageId]);
+
   return (
     <>
       <main
@@ -105,7 +154,11 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
       >
         <div className="w-full max-w-4xl mx-auto px-2 sm:px-3 md:px-4 py-2 md:py-4">
           {messages.length > 0 ? (
-            <MessageList messages={messages} />
+            <MessageList
+              messages={messages}
+              onRegenerate={handleRegenerate}
+              streaming={streaming}
+            />
           ) : (
             <div className="flex items-center justify-center h-full py-20">
               <p className="text-text-secondary text-sm">No messages yet.</p>
@@ -117,4 +170,3 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     </>
   );
 }
-

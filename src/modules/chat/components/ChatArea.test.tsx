@@ -190,3 +190,70 @@ describe("ChatArea", () => {
   });
 });
 
+describe("ChatArea — regenerate", () => {
+  it("shows regenerate button on last assistant message", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+    expect(screen.getByRole("button", { name: "Regenerate response" })).toBeTruthy();
+  });
+
+  it("does not show regenerate button when there are no messages", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
+    );
+    expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
+  });
+
+  it("calls /api/chat/regenerate and streams new response", async () => {
+    stubApiFetch(true, "Regenerated answer");
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Regenerate response" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Regenerated answer")).toBeTruthy();
+    });
+
+    expect(fetch).toHaveBeenCalledWith("/api/chat/regenerate", expect.objectContaining({
+      method: "POST",
+    }));
+  });
+
+  it("shows error when regenerate API fails", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Regenerate response" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Error: could not get response.")).toBeTruthy();
+    });
+  });
+
+  it("calls router.refresh after successful regeneration", async () => {
+    stubApiFetch(true, "New response");
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Regenerate response" }));
+    });
+
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+});
+

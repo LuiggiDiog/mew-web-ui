@@ -1,10 +1,14 @@
 import { cn } from "@/modules/shared/utils/cn";
 import { Avatar } from "@/modules/shared/components/Avatar";
 import { Badge } from "@/modules/shared/components/Badge";
+import { RefreshIcon } from "@/modules/shared/components/icons";
 import type { Message } from "@/modules/chat/types";
 
 interface MessageBubbleProps {
   message: Message;
+  showActions?: boolean;
+  onRegenerate?: () => void;
+  actionsDisabled?: boolean;
 }
 
 function formatTime(isoDate: string): string {
@@ -14,7 +18,12 @@ function formatTime(isoDate: string): string {
   return `${hours}:${minutes}`;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  showActions = false,
+  onRegenerate,
+  actionsDisabled = false,
+}: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isThinking = !isUser && message.content.trim().length === 0;
 
@@ -87,6 +96,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 {message.model}
               </span>
             </Badge>
+          )}
+          {showActions && !isUser && onRegenerate && (
+            <button
+              onClick={onRegenerate}
+              disabled={actionsDisabled}
+              className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Regenerate response"
+            >
+              <RefreshIcon className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MessageBubble } from "./MessageBubble";
 import type { Message } from "@/modules/chat/types";
 
@@ -96,5 +96,37 @@ describe("MessageBubble — assistant message", () => {
     const { container } = render(<MessageBubble message={ASSISTANT_THINKING_MSG} />);
     expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
     expect(container.querySelectorAll("[data-thinking-dot='true']").length).toBe(3);
+  });
+});
+
+describe("MessageBubble — regenerate action", () => {
+  it("does not show regenerate button by default", () => {
+    render(<MessageBubble message={ASSISTANT_MSG} />);
+    expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
+  });
+
+  it("does not show regenerate button for user messages even with showActions", () => {
+    render(<MessageBubble message={USER_MSG} showActions onRegenerate={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
+  });
+
+  it("shows regenerate button when showActions and onRegenerate are provided on assistant message", () => {
+    render(<MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={() => {}} />);
+    expect(screen.getByRole("button", { name: "Regenerate response" })).toBeTruthy();
+  });
+
+  it("calls onRegenerate when regenerate button is clicked", () => {
+    const onRegenerate = vi.fn();
+    render(<MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={onRegenerate} />);
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate response" }));
+    expect(onRegenerate).toHaveBeenCalledOnce();
+  });
+
+  it("disables regenerate button when actionsDisabled is true", () => {
+    render(
+      <MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={() => {}} actionsDisabled />
+    );
+    const btn = screen.getByRole("button", { name: "Regenerate response" });
+    expect(btn.hasAttribute("disabled")).toBe(true);
   });
 });

@@ -5,3 +5,4 @@ export { ArrowLeftIcon } from "./ArrowLeftIcon";
 export { PlusIcon } from "./PlusIcon";
 export { XIcon } from "./XIcon";
 export { ChevronDownIcon } from "./ChevronDownIcon";
+export { RefreshIcon } from "./RefreshIcon";
