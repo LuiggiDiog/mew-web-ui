@@ -102,6 +102,7 @@ When enabled, `/api/providers/ollama/models` only returns:
 - PostgreSQL database (Drizzle ORM â€” users, conversations, messages, providers, settings)
 - Ollama streaming integration (real-time token streaming)
 - Full conversation + message persistence
+- Assistant response regeneration + user message editing (with streamed re-generation)
 - Conversation list fetched from DB with real date grouping
 - Conversation deletion from context menu (right-click desktop / long-press touch) with confirmation dialog
 - Model selector populated from live Ollama API

@@ -1,13 +1,16 @@
 import { cn } from "@/modules/shared/utils/cn";
 import { Avatar } from "@/modules/shared/components/Avatar";
 import { Badge } from "@/modules/shared/components/Badge";
+import { EditableChatMessage } from "@/modules/chat/components/EditableChatMessage";
 import { RefreshIcon } from "@/modules/shared/components/icons";
 import type { Message } from "@/modules/chat/types";
 
 interface MessageBubbleProps {
   message: Message;
-  showActions?: boolean;
+  showRegenerateAction?: boolean;
+  showEditAction?: boolean;
   onRegenerate?: () => void;
+  onEdit?: (messageId: string, content: string) => void;
   actionsDisabled?: boolean;
 }
 
@@ -20,23 +23,66 @@ function formatTime(isoDate: string): string {
 
 export function MessageBubble({
   message,
-  showActions = false,
+  showRegenerateAction = false,
+  showEditAction = false,
   onRegenerate,
+  onEdit,
   actionsDisabled = false,
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isThinking = !isUser && message.content.trim().length === 0;
 
+  if (isUser) {
+    return (
+      <EditableChatMessage
+        messageId={message.id}
+        content={message.content}
+        showEditAction={showEditAction}
+        actionsDisabled={actionsDisabled}
+        onEdit={onEdit}
+      >
+        {({ isEditing, contentNode, editActionNode }) => (
+          <div className="flex gap-2.5 max-w-[85%] ml-auto flex-row-reverse">
+            <Avatar
+              name="You"
+              role="user"
+              size="sm"
+              className="mt-1 shrink-0"
+            />
+            <div className="flex flex-col gap-1 items-end">
+              <div
+                className={cn(
+                  "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+                  !isEditing
+                    ? "bg-accent text-white rounded-2xl rounded-tr-sm"
+                    : "rounded-tr-sm bg-transparent border-transparent p-0",
+                )}
+              >
+                {contentNode}
+              </div>
+              <div className="flex max-w-full min-w-0 items-center gap-2 whitespace-nowrap px-1">
+                <span className="text-xs text-text-secondary">
+                  {formatTime(message.createdAt)}
+                </span>
+                {editActionNode}
+              </div>
+            </div>
+          </div>
+        )}
+      </EditableChatMessage>
+    );
+  }
+
   return (
     <div
       className={cn(
         "flex gap-2.5 max-w-[85%]",
-        isUser ? "ml-auto flex-row-reverse" : "mr-auto",
+        "mr-auto",
       )}
     >
       <Avatar
-        name={isUser ? "You" : "AI"}
-        role={isUser ? "user" : "assistant"}
+        name="AI"
+        role="assistant"
         size="sm"
         className="mt-1 shrink-0"
       />
@@ -44,15 +90,13 @@ export function MessageBubble({
       <div
         className={cn(
           "flex flex-col gap-1",
-          isUser ? "items-end" : "items-start",
+          "items-start",
         )}
       >
         <div
           className={cn(
             "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
-            isUser
-              ? "bg-accent text-white rounded-2xl rounded-tr-sm"
-              : "bg-surface text-text-primary rounded-2xl rounded-tl-sm border border-border/50",
+            "bg-surface text-text-primary rounded-2xl border border-border/50 rounded-tl-sm",
           )}
         >
           {isThinking ? (
@@ -87,7 +131,7 @@ export function MessageBubble({
           <span className="text-xs text-text-secondary">
             {formatTime(message.createdAt)}
           </span>
-          {!isUser && message.model && (
+          {message.model && (
             <Badge
               variant="default"
               className="min-w-0 max-w-44 text-[10px] pl-1.5 pr-2.5 py-0 sm:max-w-52"
@@ -97,11 +141,12 @@ export function MessageBubble({
               </span>
             </Badge>
           )}
-          {showActions && !isUser && onRegenerate && (
+          {showRegenerateAction && onRegenerate && (
             <button
+              type="button"
               onClick={onRegenerate}
               disabled={actionsDisabled}
-              className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-transparent text-text-secondary transition-colors hover:border-border/60 hover:bg-surface-elevated hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Regenerate response"
             >
               <RefreshIcon className="w-3.5 h-3.5" />

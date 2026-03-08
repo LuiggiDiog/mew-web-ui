@@ -257,3 +257,73 @@ describe("ChatArea — regenerate", () => {
   });
 });
 
+describe("ChatArea — edit message", () => {
+  it("shows edit button on last user message", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+    expect(screen.getByRole("button", { name: "Edit message" })).toBeTruthy();
+  });
+
+  it("calls /api/chat/edit and streams edited response", async () => {
+    stubApiFetch(true, "Edited response");
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Edit message input")).toBeTruthy();
+    });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Edit message input"), {
+        target: { value: "Edited question" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save edited message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Edited question")).toBeTruthy();
+      expect(screen.getByText("Edited response")).toBeTruthy();
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/chat/edit",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+  });
+
+  it("shows error when edit API fails", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Edit message input")).toBeTruthy();
+    });
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Edit message input"), {
+        target: { value: "Edited question" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save edited message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Error: could not get response.")).toBeTruthy();
+    });
+  });
+});
+

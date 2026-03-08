@@ -7,16 +7,24 @@ import type { Message } from "@/modules/chat/types";
 interface MessageListProps {
   messages: Message[];
   onRegenerate?: () => void;
+  onEdit?: (messageId: string, content: string) => void;
   streaming?: boolean;
 }
 
-export function MessageList({ messages, onRegenerate, streaming }: MessageListProps) {
+export function MessageList({ messages, onRegenerate, onEdit, streaming }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLength = useRef<number>(messages.length);
 
   const lastAssistantId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") return messages[i].id;
+    }
+    return null;
+  }, [messages]);
+
+  const lastUserId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].id;
     }
     return null;
   }, [messages]);
@@ -34,8 +42,10 @@ export function MessageList({ messages, onRegenerate, streaming }: MessageListPr
         <MessageBubble
           key={message.id}
           message={message}
-          showActions={message.id === lastAssistantId}
+          showRegenerateAction={message.id === lastAssistantId}
+          showEditAction={message.id === lastUserId}
           onRegenerate={onRegenerate}
+          onEdit={onEdit}
           actionsDisabled={streaming}
         />
       ))}

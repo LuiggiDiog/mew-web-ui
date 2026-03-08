@@ -144,6 +144,65 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     }
   }, [conversationId, activeModel, messages, streaming, router, setStreamingMessageId]);
 
+  const handleEdit = useCallback(
+    async (messageId: string, content: string) => {
+      if (streaming) return;
+
+      const targetIndex = messages.findIndex(
+        (m) => m.id === messageId && m.role === "user"
+      );
+      if (targetIndex === -1) return;
+
+      const assistantId = `optimistic-assistant-edit-${Date.now()}`;
+      const assistantMsg: Message = {
+        id: assistantId,
+        conversationId,
+        role: "assistant",
+        content: "",
+        createdAt: new Date().toISOString(),
+        model: activeModel,
+      };
+
+      setMessages((prev) => {
+        const index = prev.findIndex((m) => m.id === messageId && m.role === "user");
+        if (index === -1) return prev;
+
+        const kept = prev.slice(0, index + 1).map((m, i) =>
+          i === index ? { ...m, content } : m
+        );
+        return [...kept, assistantMsg];
+      });
+      setStreaming(true);
+      setStreamingMessageId(assistantId);
+
+      try {
+        const res = await fetch("/api/chat/edit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId,
+            messageId,
+            content,
+            model: activeModel,
+          }),
+        });
+
+        const ok = await readStream(res, assistantId, setMessages);
+        if (ok) router.refresh();
+      } catch {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: "Error: request failed." } : m
+          )
+        );
+      } finally {
+        setStreaming(false);
+        setStreamingMessageId(null);
+      }
+    },
+    [conversationId, activeModel, messages, streaming, router, setStreamingMessageId]
+  );
+
   return (
     <>
       <main
@@ -157,6 +216,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
             <MessageList
               messages={messages}
               onRegenerate={handleRegenerate}
+              onEdit={handleEdit}
               streaming={streaming}
             />
           ) : (

@@ -105,28 +105,102 @@ describe("MessageBubble — regenerate action", () => {
     expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
   });
 
-  it("does not show regenerate button for user messages even with showActions", () => {
-    render(<MessageBubble message={USER_MSG} showActions onRegenerate={() => {}} />);
+  it("does not show regenerate button for user messages even with showRegenerateAction", () => {
+    render(<MessageBubble message={USER_MSG} showRegenerateAction onRegenerate={() => {}} />);
     expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
   });
 
-  it("shows regenerate button when showActions and onRegenerate are provided on assistant message", () => {
-    render(<MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={() => {}} />);
+  it("shows regenerate button when showRegenerateAction and onRegenerate are provided on assistant message", () => {
+    render(<MessageBubble message={ASSISTANT_MSG} showRegenerateAction onRegenerate={() => {}} />);
     expect(screen.getByRole("button", { name: "Regenerate response" })).toBeTruthy();
   });
 
   it("calls onRegenerate when regenerate button is clicked", () => {
     const onRegenerate = vi.fn();
-    render(<MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={onRegenerate} />);
+    render(<MessageBubble message={ASSISTANT_MSG} showRegenerateAction onRegenerate={onRegenerate} />);
     fireEvent.click(screen.getByRole("button", { name: "Regenerate response" }));
     expect(onRegenerate).toHaveBeenCalledOnce();
   });
 
   it("disables regenerate button when actionsDisabled is true", () => {
     render(
-      <MessageBubble message={ASSISTANT_MSG} showActions onRegenerate={() => {}} actionsDisabled />
+      <MessageBubble
+        message={ASSISTANT_MSG}
+        showRegenerateAction
+        onRegenerate={() => {}}
+        actionsDisabled
+      />
     );
     const btn = screen.getByRole("button", { name: "Regenerate response" });
     expect(btn.hasAttribute("disabled")).toBe(true);
+  });
+});
+
+describe("MessageBubble — edit action", () => {
+  it("does not show edit button by default", () => {
+    render(<MessageBubble message={USER_MSG} />);
+    expect(screen.queryByRole("button", { name: "Edit message" })).toBeNull();
+  });
+
+  it("shows edit button on user message when showEditAction and onEdit are provided", () => {
+    render(<MessageBubble message={USER_MSG} showEditAction onEdit={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit message" })).toBeTruthy();
+  });
+
+  it("does not show edit button for assistant messages", () => {
+    render(<MessageBubble message={ASSISTANT_MSG} showEditAction onEdit={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Edit message" })).toBeNull();
+  });
+
+  it("calls onEdit when saving edited message", () => {
+    const onEdit = vi.fn();
+    render(<MessageBubble message={USER_MSG} showEditAction onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    fireEvent.change(screen.getByLabelText("Edit message input"), {
+      target: { value: "Updated message" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save edited message" }));
+
+    expect(onEdit).toHaveBeenCalledWith(USER_MSG.id, "Updated message");
+  });
+
+  it("cancels edit without calling onEdit", () => {
+    const onEdit = vi.fn();
+    render(<MessageBubble message={USER_MSG} showEditAction onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    fireEvent.change(screen.getByLabelText("Edit message input"), {
+      target: { value: "Updated message" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel edit message" }));
+
+    expect(onEdit).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Edit message input")).toBeNull();
+  });
+
+  it("saves edit with Enter key", () => {
+    const onEdit = vi.fn();
+    render(<MessageBubble message={USER_MSG} showEditAction onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    const input = screen.getByLabelText("Edit message input");
+    fireEvent.change(input, { target: { value: "Updated with enter" } });
+    fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
+
+    expect(onEdit).toHaveBeenCalledWith(USER_MSG.id, "Updated with enter");
+  });
+
+  it("cancels edit with Escape key", () => {
+    const onEdit = vi.fn();
+    render(<MessageBubble message={USER_MSG} showEditAction onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit message" }));
+    const input = screen.getByLabelText("Edit message input");
+    fireEvent.change(input, { target: { value: "Will cancel" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(onEdit).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Edit message input")).toBeNull();
   });
 });
