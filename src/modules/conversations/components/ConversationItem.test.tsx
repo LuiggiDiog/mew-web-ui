@@ -30,12 +30,13 @@ describe("ConversationItem", () => {
     expect(screen.getByText("Can you explain how async/await works?")).toBeTruthy();
   });
 
-  it("formats and shows the time from updatedAt (UTC HH:MM)", () => {
+  it("formats and shows the time from updatedAt in local HH:MM", () => {
     render(
       <ConversationItem conversation={CONV} isActive={false} onClick={vi.fn()} onDelete={vi.fn()} />
     );
-    // updatedAt is 14:30 UTC
-    expect(screen.getByText("14:30")).toBeTruthy();
+    const date = new Date(CONV.updatedAt);
+    const expected = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    expect(screen.getByText(expected)).toBeTruthy();
   });
 
   it("calls onClick when clicked", () => {

@@ -37,9 +37,11 @@ describe("MessageBubble — user message", () => {
     expect(screen.queryByText("llama3.2")).toBeNull();
   });
 
-  it("shows createdAt time in deterministic UTC HH:MM format", () => {
+  it("shows createdAt time in local HH:MM format", () => {
     render(<MessageBubble message={USER_MSG} />);
-    expect(screen.getByText("10:00")).toBeTruthy();
+    const date = new Date(USER_MSG.createdAt);
+    const expected = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    expect(screen.getByText(expected)).toBeTruthy();
   });
 });
 
@@ -66,7 +68,9 @@ describe("MessageBubble — assistant message", () => {
     };
     render(<MessageBubble message={longModel} />);
 
-    const metadata = screen.getByText("10:00").parentElement as HTMLElement;
+    const date = new Date(ASSISTANT_MSG.createdAt);
+    const expected = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    const metadata = screen.getByText(expected).parentElement as HTMLElement;
     expect(metadata.className).toContain("whitespace-nowrap");
 
     const badge = screen.getByText(longModel.model);
