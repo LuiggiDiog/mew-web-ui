@@ -6,6 +6,7 @@ import { getSession } from "@/modules/auth/lib/session";
 import { ChatHeader } from "@/modules/chat/components/ChatHeader";
 import { ChatArea } from "@/modules/chat/components/ChatArea";
 import type { Message } from "@/modules/chat/types";
+import { isUuid } from "@/modules/shared/utils/uuid";
 
 // Next.js 16 App Router: params is a Promise
 export default async function ConversationPage({
@@ -16,7 +17,7 @@ export default async function ConversationPage({
   const { id } = await params;
   const session = await getSession();
 
-  if (!session.userId) notFound();
+  if (!session.userId || !isUuid(id)) notFound();
 
   const [conversation] = await db
     .select()

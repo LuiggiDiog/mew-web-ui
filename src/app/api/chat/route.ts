@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { conversations, messages } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { isUuid } from "@/modules/shared/utils/uuid";
+
+const MAX_MESSAGE_LENGTH = 20_000;
+const MAX_MODEL_LENGTH = 200;
+const MAX_PROVIDER_LENGTH = 100;
 
 export async function POST(request: NextRequest) {
   const { session, error } = await getApiSession();
   if (error) return error;
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const { message, model, provider, conversationId } = body as {
     message?: string;
     model?: string;
@@ -17,16 +26,58 @@ export async function POST(request: NextRequest) {
     conversationId?: string;
   };
 
-  if (!message || !model || !provider) {
+  if (
+    typeof message !== "string" ||
+    typeof model !== "string" ||
+    typeof provider !== "string" ||
+    !message ||
+    !model ||
+    !provider
+  ) {
     return NextResponse.json(
       { error: "message, model, and provider are required" },
       { status: 400 }
     );
   }
 
-  // Resolve or create conversation
+  if (conversationId && !isUuid(conversationId)) {
+    return NextResponse.json(
+      { error: "conversationId must be a valid UUID" },
+      { status: 400 }
+    );
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return NextResponse.json(
+      { error: `message exceeds max length (${MAX_MESSAGE_LENGTH})` },
+      { status: 400 }
+    );
+  }
+
+  if (model.length > MAX_MODEL_LENGTH || provider.length > MAX_PROVIDER_LENGTH) {
+    return NextResponse.json(
+      { error: "model/provider exceed max length" },
+      { status: 400 }
+    );
+  }
+
+  // Resolve or create conversation, always scoped to the authenticated user
   let convId = conversationId;
-  if (!convId) {
+  if (convId) {
+    const [conversation] = await db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.id, convId),
+          eq(conversations.userId, session.userId)
+        )
+      );
+
+    if (!conversation) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+  } else {
     const title = message.slice(0, 60);
     const [newConv] = await db
       .insert(conversations)
@@ -42,7 +93,7 @@ export async function POST(request: NextRequest) {
     content: message,
   });
 
-  // Fetch last 20 messages as context
+  // Fetch up to 20 messages as context
   const history = await db
     .select()
     .from(messages)
@@ -86,7 +137,12 @@ export async function POST(request: NextRequest) {
           preview: assistantContent.slice(0, 100),
           updatedAt: new Date(),
         })
-        .where(eq(conversations.id, convId!));
+        .where(
+          and(
+            eq(conversations.id, convId!),
+            eq(conversations.userId, session.userId)
+          )
+        );
 
       controller.close();
     },

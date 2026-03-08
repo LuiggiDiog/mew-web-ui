@@ -50,11 +50,35 @@ describe("GET /api/conversations", () => {
 });
 
 describe("POST /api/conversations", () => {
+  it("returns 400 when body is invalid JSON", async () => {
+    const req = new Request("http://localhost/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
   it("returns 400 when title is missing", async () => {
     const req = new Request("http://localhost/api/conversations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: "llama3.2", provider: "ollama" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when title exceeds max length", async () => {
+    const req = new Request("http://localhost/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "a".repeat(201),
+        model: "llama3.2",
+        provider: "ollama",
+      }),
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
