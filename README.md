@@ -51,9 +51,11 @@ For Google sign-in, also set:
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 `GOOGLE_REDIRECT_URI` is optional if you want automatic origin-based behavior (localhost/ngrok).
+`NEXT_PUBLIC_APP_URL` is recommended for correct Open Graph/Twitter link previews when sharing.
 
 Other commands:
 

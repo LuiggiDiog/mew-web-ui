@@ -14,8 +14,46 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  applicationName: "Mew WebUI",
   title: "Mew WebUI",
   description: "Private AI workspace",
+  keywords: [
+    "Mew WebUI",
+    "AI workspace",
+    "private AI",
+    "self-hosted LLM UI",
+    "Ollama",
+    "Open source AI UI",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Mew WebUI",
+    title: "Mew WebUI",
+    description: "Private AI workspace",
+    images: [
+      {
+        url: "/isotype.png",
+        width: 1024,
+        height: 1024,
+        alt: "Mew WebUI isotype",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mew WebUI",
+    description: "Private AI workspace",
+    images: ["/isotype.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: [
       { url: "/isotype.svg", type: "image/svg+xml" },
@@ -30,6 +68,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
+  themeColor: "#7B63FF",
 };
 
 export default function RootLayout({
