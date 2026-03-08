@@ -11,6 +11,11 @@ export function ModelSelector() {
   const [open, setOpen] = useState(false);
   const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
   const [ollamaReachable, setOllamaReachable] = useState(true);
+  const currentModelLabel = ollamaModels.length > 0
+    ? activeModel
+    : ollamaReachable
+      ? "Loading..."
+      : "No model";
 
   useEffect(() => {
     Promise.all([
@@ -40,23 +45,19 @@ export function ModelSelector() {
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
+          "flex w-full max-w-full min-w-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs",
           "text-text-secondary hover:text-text-primary hover:bg-surface-elevated",
           "transition-colors border border-transparent hover:border-border"
         )}
         aria-label="Select model"
       >
-        <span className="font-medium text-text-primary">
-          {ollamaModels.length > 0
-            ? activeModel
-            : ollamaReachable
-              ? "Loading..."
-              : "No model"}
+        <span className="min-w-0 truncate font-medium text-text-primary" title={currentModelLabel}>
+            {currentModelLabel}
         </span>
         <span className="text-text-secondary">/</span>
-        <span>Ollama</span>
+        <span className="shrink-0">Ollama</span>
         <ChevronDownIcon
-          className={cn("transition-transform duration-200", open && "rotate-180")}
+          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
         />
       </button>
 

@@ -59,6 +59,23 @@ describe("MessageBubble — assistant message", () => {
     expect(screen.getByText("llama3.2")).toBeTruthy();
   });
 
+  it("keeps model metadata on one line and truncates long model names", () => {
+    const longModel = {
+      ...ASSISTANT_MSG,
+      model: "very-long-model-name-that-should-not-wrap-in-the-chat-metadata-row",
+    };
+    render(<MessageBubble message={longModel} />);
+
+    const metadata = screen.getByText("10:00").parentElement as HTMLElement;
+    expect(metadata.className).toContain("whitespace-nowrap");
+
+    const badge = screen.getByText(longModel.model);
+    expect(badge.className).toContain("overflow-hidden");
+    expect(badge.className).toContain("text-ellipsis");
+    expect(badge.className).toContain("whitespace-nowrap");
+    expect((badge.parentElement as HTMLElement).className).toContain("pr-2.5");
+  });
+
   it("does not show model badge when model is absent", () => {
     const noModel = { ...ASSISTANT_MSG, model: undefined };
     render(<MessageBubble message={noModel} />);

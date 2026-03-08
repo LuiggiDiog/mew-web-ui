@@ -43,13 +43,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {message.content}
         </div>
 
-        <div className="flex items-center gap-2 px-1">
+        <div className="flex max-w-full min-w-0 items-center gap-2 whitespace-nowrap px-1">
           <span className="text-xs text-text-secondary">
             {formatTime(message.createdAt)}
           </span>
           {!isUser && message.model && (
-            <Badge variant="default" className="text-[10px] px-1.5 py-0">
-              {message.model}
+            <Badge
+              variant="default"
+              className="min-w-0 max-w-44 text-[10px] pl-1.5 pr-2.5 py-0 sm:max-w-52"
+            >
+              <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                {message.model}
+              </span>
             </Badge>
           )}
         </div>

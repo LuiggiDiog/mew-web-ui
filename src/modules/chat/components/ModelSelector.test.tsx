@@ -105,4 +105,16 @@ describe("ModelSelector", () => {
     expect(useChatStore.getState().activeModel).toBe("phi4:latest");
     expect(useChatStore.getState().activeProvider).toBe("ollama");
   });
+
+  it("keeps selected model in one line with truncation classes", async () => {
+    const longModel = "hf.co/mradermacher/Dolphin-Mistral-24B-Venice-Edition-GGUF:Q4_K_M";
+    stubFetch([{ name: longModel, modified_at: "2024-01-01", size: 1000 }], longModel);
+    await act(async () => render(<ModelSelector />));
+
+    await waitFor(() => {
+      const modelText = screen.getByText(longModel);
+      expect(modelText.className).toContain("truncate");
+      expect(modelText.getAttribute("title")).toBe(longModel);
+    });
+  });
 });
