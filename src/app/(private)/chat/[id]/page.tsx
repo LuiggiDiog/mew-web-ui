@@ -1,8 +1,11 @@
+import { notFound } from "next/navigation";
+import { db } from "@/db";
+import { conversations, messages } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
+import { getSession } from "@/modules/auth/lib/session";
 import { ChatHeader } from "@/modules/chat/components/ChatHeader";
-import { MessageList } from "@/modules/chat/components/MessageList";
-import { ChatComposer } from "@/modules/chat/components/ChatComposer";
-import { MOCK_MESSAGES } from "@/modules/chat/mocks/messages";
-import { MOCK_CONVERSATIONS } from "@/modules/conversations/mocks";
+import { ChatArea } from "@/modules/chat/components/ChatArea";
+import type { Message } from "@/modules/chat/types";
 
 // Next.js 16 App Router: params is a Promise
 export default async function ConversationPage({
@@ -11,28 +14,36 @@ export default async function ConversationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await getSession();
 
-  const conversation = MOCK_CONVERSATIONS.find((c) => c.id === id);
-  const messages = MOCK_MESSAGES.filter((m) => m.conversationId === id);
+  if (!session.userId) notFound();
+
+  const [conversation] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.userId, session.userId)));
+
+  if (!conversation) notFound();
+
+  const msgs = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, id))
+    .orderBy(asc(messages.createdAt));
+
+  const initialMessages: Message[] = msgs.map((m) => ({
+    id: m.id,
+    conversationId: m.conversationId,
+    role: m.role,
+    content: m.content,
+    createdAt: m.createdAt.toISOString(),
+    model: m.model ?? undefined,
+  }));
 
   return (
     <div className="flex flex-col h-full">
-      <ChatHeader
-        title={conversation?.title ?? "Conversation"}
-        showBack
-      />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          {messages.length > 0 ? (
-            <MessageList messages={messages} />
-          ) : (
-            <div className="flex items-center justify-center h-full py-20">
-              <p className="text-text-secondary text-sm">No messages yet.</p>
-            </div>
-          )}
-        </div>
-      </main>
-      <ChatComposer />
+      <ChatHeader title={conversation.title} showBack />
+      <ChatArea conversationId={id} initialMessages={initialMessages} />
     </div>
   );
 }

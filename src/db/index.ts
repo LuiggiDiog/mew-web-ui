@@ -1,12 +1,21 @@
-// TODO: Phase 2 — implement database connection
-// This file will initialize Drizzle ORM with a local SQLite/LibSQL database.
-//
-// Phase 2 steps:
-// 1. Install: npm install drizzle-orm better-sqlite3 @types/better-sqlite3
-// 2. Install: npm install -D drizzle-kit
-// 3. Add schema in src/db/schema/
-// 4. Configure drizzle.config.ts at project root
-// 5. Replace `db = null` below with the real Drizzle client
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const db = null as any;
+// Prevent multiple connections in dev (Next.js HMR)
+const globalForDb = globalThis as unknown as {
+  _pgClient?: ReturnType<typeof postgres>;
+};
+
+const connectionString = process.env.DATABASE_URL!;
+
+const client =
+  globalForDb._pgClient ??
+  postgres(connectionString, { max: 10 });
+
+if (process.env.NODE_ENV !== "production") {
+  globalForDb._pgClient = client;
+}
+
+export const db = drizzle(client, { schema });
+export type DB = typeof db;

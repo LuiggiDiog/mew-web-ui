@@ -7,14 +7,15 @@ interface SettingsToggleProps {
   label: string;
   description?: string;
   defaultChecked?: boolean;
+  settingKey?: string;
 }
 
 export function SettingsToggle({
   label,
   description,
   defaultChecked = false,
+  settingKey,
 }: SettingsToggleProps) {
-  // Local state only — no persistence in Phase 1
   const [enabled, setEnabled] = useState(defaultChecked);
 
   return (
@@ -29,7 +30,17 @@ export function SettingsToggle({
       <button
         role="switch"
         aria-checked={enabled}
-        onClick={() => setEnabled((v) => !v)}
+        onClick={() => {
+          const next = !enabled;
+          setEnabled(next);
+          if (settingKey) {
+            fetch("/api/settings", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ [settingKey]: String(next) }),
+            }).catch(() => {});
+          }
+        }}
         className={cn(
           "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200",
           enabled ? "bg-accent" : "bg-zinc-700"

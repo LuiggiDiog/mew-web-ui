@@ -1,11 +1,44 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
 import { Button } from "@/modules/shared/components/Button";
 import { APP_NAME } from "@/modules/shared/constants";
 
 export function LoginCard() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        router.push("/chat");
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setError(data.error ?? "Invalid email or password");
+      }
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -27,12 +60,7 @@ export function LoginCard() {
         Sign in
       </h1>
 
-      {/* Form — visual only in Phase 1 */}
-      <form
-        className="space-y-4"
-        onSubmit={(e) => e.preventDefault()}
-        aria-label="Login form"
-      >
+      <form className="space-y-4" onSubmit={handleSubmit} aria-label="Login form">
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-text-secondary" htmlFor="email">
             Email
@@ -42,6 +70,9 @@ export function LoginCard() {
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             className={cn(
               "w-full px-3 py-2.5 rounded-xl text-sm",
               "bg-surface-elevated border border-border",
@@ -60,6 +91,9 @@ export function LoginCard() {
             type="password"
             placeholder="••••••••"
             autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             className={cn(
               "w-full px-3 py-2.5 rounded-xl text-sm",
               "bg-surface-elevated border border-border",
@@ -69,21 +103,21 @@ export function LoginCard() {
           />
         </div>
 
+        {error && (
+          <p className="text-sm text-error text-center">{error}</p>
+        )}
+
         <Button
           type="submit"
           variant="primary"
           size="lg"
           className="w-full mt-2"
-          onClick={() => {
-            // TODO: Phase 2 — real auth logic
-            window.location.href = "/chat";
-          }}
+          disabled={loading || !email || !password}
         >
-          Continue
+          {loading ? "Signing in…" : "Continue"}
         </Button>
       </form>
 
-      {/* Footer note */}
       <p className="mt-6 text-center text-xs text-text-secondary leading-relaxed">
         Private workspace &mdash; no accounts shared
       </p>

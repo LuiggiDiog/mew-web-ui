@@ -1,8 +1,6 @@
 import type { Conversation } from "@/modules/conversations/types";
 
-// Dates relative to 2026-03-07 (current date)
 export const MOCK_CONVERSATIONS: Conversation[] = [
-  // Today
   {
     id: "conv-1",
     title: "Explain async/await in JavaScript",
@@ -23,7 +21,6 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     provider: "ollama",
     messageCount: 4,
   },
-  // Yesterday
   {
     id: "conv-3",
     title: "Summarize quarterly report",
@@ -44,7 +41,6 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     provider: "ollama",
     messageCount: 8,
   },
-  // Last week
   {
     id: "conv-5",
     title: "Brainstorm startup ideas",
@@ -80,22 +76,28 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
 export function groupConversationsByDate(
   conversations: Conversation[]
 ): Record<string, Conversation[]> {
-  const today = new Date("2026-03-07");
-  const yesterday = new Date("2026-03-06");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const lastWeek = new Date(today);
+  lastWeek.setDate(today.getDate() - 7);
 
   const groups: Record<string, Conversation[]> = {};
 
   for (const conv of conversations) {
     const date = new Date(conv.updatedAt);
-    const dateStr = date.toDateString();
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     let label: string;
-    if (dateStr === today.toDateString()) {
+    if (day.getTime() === today.getTime()) {
       label = "Today";
-    } else if (dateStr === yesterday.toDateString()) {
+    } else if (day.getTime() === yesterday.getTime()) {
       label = "Yesterday";
-    } else {
+    } else if (day >= lastWeek) {
       label = "Last week";
+    } else {
+      label = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
     }
 
     if (!groups[label]) groups[label] = [];

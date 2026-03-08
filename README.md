@@ -2,8 +2,8 @@
 
 A private, self-hosted web interface for interacting with local and external AI models.
 
-> **Current phase: Phase 1 — UI Prototype**
-> The app is navigable with mock data. No real AI, no database, no auth yet.
+> **Current phase: Phase 2 — Core Development (complete)**
+> Real auth, PostgreSQL, Ollama streaming, full conversation persistence.
 
 ---
 
@@ -20,43 +20,57 @@ Designed to feel like a focused work tool — clean, fast, and private.
 ## Running the project
 
 ```bash
+# 1. Start the database
+docker compose up -d
+
+# 2. Install dependencies
 npm install
+
+# 3. Copy env file and set SESSION_SECRET
+cp .env.example .env.local
+
+# 4. Run migrations
+npm run db:generate
+npm run db:migrate
+
+# 5. Seed the first user (set SEED_EMAIL / SEED_PASSWORD / SEED_DISPLAY_NAME in .env.local)
+npm run db:seed
+
+# 6. Start Ollama (separate terminal)
+ollama serve
+
+# 7. Start dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — it redirects to `/chat`.
+Open [http://localhost:3000](http://localhost:3000) — redirects to `/login`, then `/chat`.
 
 Other commands:
 
 ```bash
-npm run build   # production build + TypeScript check
-npm run lint    # ESLint
-npm run start   # start production server (after build)
+npm run build          # production build + TypeScript check
+npm run lint           # ESLint
+npm run start          # start production server (after build)
+npm test               # run all tests
+npm run test:coverage  # test coverage report
+npm run db:studio      # open Drizzle Studio (DB browser)
 ```
 
 ---
 
-## Phase 1 — What's implemented
+## What's implemented (Phase 1 + 2)
 
-- Login screen (visual only, no real auth)
-- Chat empty state with quick action prompts
-- Chat conversation view with mock messages
-- Conversation drawer / sidebar (mobile overlay, desktop sidebar)
-- Model/provider selector in the composer
-- Settings page with toggles and provider list
-- Full dark-mode design system
-- Modular project structure ready for Phase 2
-
-## What's NOT implemented yet
-
-- Real authentication
-- Database (Drizzle ORM — Phase 2)
-- Actual AI calls (Ollama, OpenAI, Anthropic)
-- Message streaming
-- Conversation persistence
-- Provider credential management
-- Tests (structure prepared, not implemented)
-- Server actions
+- Login / logout with real auth (bcryptjs + iron-session)
+- Route protection via middleware
+- PostgreSQL database (Drizzle ORM — users, conversations, messages, providers, settings)
+- Ollama streaming integration (real-time token streaming)
+- Full conversation + message persistence
+- Conversation list fetched from DB with real date grouping
+- Model selector populated from live Ollama API
+- Settings persistence (PATCH /api/settings)
+- Provider status (live health check)
+- TDD test suite (Vitest + Testing Library)
+- Chat empty state, mobile-first dark-mode UI
 
 ---
 
@@ -96,8 +110,18 @@ See [AGENTS.md](./AGENTS.md) for the full project guide, roadmap, and rules.
 
 ---
 
+## Tech stack (Phase 2 additions)
+
+| Tool | Version | Role |
+|------|---------|------|
+| Drizzle ORM | latest | DB schema + migrations |
+| postgres | latest | PostgreSQL driver (ESM-native) |
+| iron-session | latest | Cookie session management |
+| bcryptjs | latest | Password hashing |
+| Vitest | 4 | Test runner |
+
 ## Roadmap
 
-- **Phase 1** (current): UI prototype — screens, navigation, mocks
-- **Phase 2**: Core development — real auth, DB (Drizzle + SQLite), real AI integration
-- **Phase 3**: Hardening — advanced features, performance, security
+- **Phase 1** (complete): UI prototype — screens, navigation, mocks
+- **Phase 2** (complete): Core development — real auth, PostgreSQL, Ollama streaming, TDD
+- **Phase 3** (next): Hardening — advanced features, performance, security

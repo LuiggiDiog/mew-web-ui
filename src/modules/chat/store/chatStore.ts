@@ -9,12 +9,14 @@ interface ChatState {
   selectedConversationId: string | null;
   activeModel: string;
   activeProvider: string;
+  streamingMessageId: string | null;
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
   selectConversation: (id: string | null) => void;
   setModel: (model: string) => void;
   setProvider: (provider: string) => void;
+  setStreamingMessageId: (id: string | null) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -22,10 +24,12 @@ export const useChatStore = create<ChatState>((set) => ({
   selectedConversationId: null,
   activeModel: DEFAULT_MODEL,
   activeProvider: DEFAULT_PROVIDER,
+  streamingMessageId: null,
   openDrawer: () => set({ drawerOpen: true }),
   closeDrawer: () => set({ drawerOpen: false }),
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
   selectConversation: (id) => set({ selectedConversationId: id }),
   setModel: (model) => set({ activeModel: model }),
   setProvider: (provider) => set({ activeProvider: provider }),
+  setStreamingMessageId: (id) => set({ streamingMessageId: id }),
 }));

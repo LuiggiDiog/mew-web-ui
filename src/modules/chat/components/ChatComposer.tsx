@@ -7,21 +7,22 @@ import { ModelSelector } from "@/modules/chat/components/ModelSelector";
 
 interface ChatComposerProps {
   onSend?: (text: string) => void;
+  disabled?: boolean;
 }
 
-export function ChatComposer({ onSend }: ChatComposerProps) {
+export function ChatComposer({ onSend, disabled = false }: ChatComposerProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || disabled) return;
     onSend?.(trimmed);
     setValue("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, onSend]);
+  }, [value, onSend, disabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -69,10 +70,10 @@ export function ChatComposer({ onSend }: ChatComposerProps) {
           />
           <button
             onClick={handleSend}
-            disabled={!value.trim()}
+            disabled={!value.trim() || disabled}
             className={cn(
               "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
-              value.trim()
+              value.trim() && !disabled
                 ? "text-accent hover:bg-accent/10"
                 : "text-text-secondary opacity-40 cursor-not-allowed"
             )}

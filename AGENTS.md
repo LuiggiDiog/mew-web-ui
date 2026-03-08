@@ -74,47 +74,32 @@ modules/<name>/
 
 ## Roadmap
 
-### Phase 1 — UI Prototype (CURRENT)
+### Phase 1 — UI Prototype (COMPLETE)
 
-**Status: Active**
+**Status: Complete**
 
-Goal: navigable visual prototype with screens, layouts, and mock data.
+Goal: navigable visual prototype with screens, layouts, and mock data. All goals met.
 
-Includes:
-- All screens visible and navigable
-- Mock data everywhere
-- Zustand for UI state only (drawer, model selector, etc.)
-- Sileo toasts wired up for future use
-- Design system and visual identity
-- Modular structure ready for Phase 2
+### Phase 2 — Core Development (CURRENT)
 
-Does NOT include:
-- Auth real (no session, no middleware)
-- Database (db/index.ts exports null)
-- Real AI provider calls
-- Streaming
-- Persistence of any kind
-- Server actions
-- Real API keys or credentials
-- Test suite (structure only)
-- Security hardening
-
-### Phase 2 — Core Development
+**Status: Complete**
 
 Goal: convert the prototype into a working application.
 
-Includes:
-- Drizzle ORM + SQLite/LibSQL local database
-- Real auth (local credentials, session management)
-- API routes for chat streaming
-- Real Ollama integration
-- External provider integration (OpenAI, Anthropic)
-- Conversation and message persistence
-- Settings persistence
-- Provider credential management (encrypted storage)
-- Unit and integration tests (TDD)
-- Error handling
-- Real server actions
+Delivered:
+- PostgreSQL via Docker (docker-compose.yml, two containers: main + test)
+- Drizzle ORM with full schema (users, conversations, messages, providers, settings)
+- Real auth: bcryptjs + iron-session (httpOnly cookies), middleware.ts route protection
+- API routes: /api/auth/login|logout|me, /api/chat (streaming), /api/conversations (CRUD), /api/providers, /api/providers/ollama/health|models, /api/settings
+- Ollama streaming integration (OllamaClient with isConnected, listModels, chat generator)
+- Full conversation + message persistence
+- Settings persistence per user
+- TDD: Vitest + @testing-library/react, schema tests + auth tests + ollama client tests
+- ChatArea + NewChatArea client components for real-time streaming display
+- ConversationDrawer fetches real conversations from API
+- ModelSelector fetches real Ollama models from API
+- ProvidersList fetches real provider status from API
+- SettingsToggle persists via PATCH /api/settings
 
 ### Phase 3 — Hardening and Expansion
 
@@ -133,9 +118,7 @@ Potential inclusions:
 
 ---
 
-## CURRENT PHASE: Phase 1 — UI Prototype
-
-**Do not implement Phase 2 features during Phase 1 work.**
+## CURRENT PHASE: Phase 3 — Hardening and Expansion
 
 ---
 

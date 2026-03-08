@@ -15,10 +15,12 @@ export default function SettingsPage() {
               label="Save conversation history"
               description="Store conversations locally on this device"
               defaultChecked
+              settingKey="saveHistory"
             />
             <SettingsToggle
               label="Send usage statistics"
               description="Help improve the app (no prompts are shared)"
+              settingKey="usageStats"
             />
           </SettingsSection>
 
@@ -26,18 +28,16 @@ export default function SettingsPage() {
             <SettingsToggle
               label="Dark mode"
               defaultChecked
+              settingKey="darkMode"
             />
             <SettingsToggle
               label="Compact message layout"
               description="Use a denser layout for messages"
+              settingKey="compactLayout"
             />
           </SettingsSection>
 
           <ProvidersList />
-
-          <p className="text-xs text-text-secondary text-center pb-4">
-            Settings are visual only in Phase 1 — no persistence yet.
-          </p>
         </div>
       </main>
     </div>
