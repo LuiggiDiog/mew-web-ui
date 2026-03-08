@@ -66,6 +66,15 @@ npm run test:coverage  # test coverage report
 npm run db:studio      # open Drizzle Studio (DB browser)
 ```
 
+Testing flag for Ollama model list:
+
+```bash
+OLLAMA_TEST_ONLY_MODEL_ENABLED=true
+```
+
+When enabled, `/api/providers/ollama/models` only returns:
+`hf.co/mradermacher/Dolphin-Mistral-24B-Venice-Edition-GGUF:Q4_K_M`.
+
 ---
 
 ## What's implemented (Phase 1 + 2)
