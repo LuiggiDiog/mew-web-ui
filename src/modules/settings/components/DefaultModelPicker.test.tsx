@@ -49,7 +49,10 @@ describe("DefaultModelPicker", () => {
     stubFetch({ models: MODELS }, { defaultModel: "" });
     await act(async () => render(<DefaultModelPicker />));
     await waitFor(() => {
-      expect(screen.getByRole("combobox")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Select default model" })).toBeTruthy();
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Select default model" }));
     });
     const options = screen.getAllByRole("option");
     expect(options).toHaveLength(MODELS.length);
@@ -61,8 +64,7 @@ describe("DefaultModelPicker", () => {
     stubFetch({ models: MODELS }, { defaultModel: "phi4:latest" });
     await act(async () => render(<DefaultModelPicker />));
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("phi4:latest");
+      expect(screen.getByText("phi4:latest")).toBeTruthy();
     });
   });
 
@@ -70,8 +72,7 @@ describe("DefaultModelPicker", () => {
     stubFetch({ models: MODELS }, { defaultModel: "unknown-model" });
     await act(async () => render(<DefaultModelPicker />));
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("llama3.2:latest");
+      expect(screen.getByText("llama3.2:latest")).toBeTruthy();
     });
   });
 
@@ -88,10 +89,14 @@ describe("DefaultModelPicker", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await act(async () => render(<DefaultModelPicker />));
-    await waitFor(() => screen.getByRole("combobox"));
+    await waitFor(() => screen.getByRole("button", { name: "Select default model" }));
 
     await act(async () => {
-      fireEvent.change(screen.getByRole("combobox"), { target: { value: "phi4:latest" } });
+      fireEvent.click(screen.getByRole("button", { name: "Select default model" }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("option", { name: "phi4:latest" }));
     });
 
     await waitFor(() => {
