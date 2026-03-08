@@ -10,6 +10,8 @@ describe("DB Schema", () => {
       expect(cols).toContain("email");
       expect(cols).toContain("passwordHash");
       expect(cols).toContain("displayName");
+      expect(cols).toContain("authProvider");
+      expect(cols).toContain("googleSub");
       expect(cols).toContain("createdAt");
     });
   });

@@ -4,6 +4,7 @@ export interface SessionData {
   userId?: string;
   email?: string;
   displayName?: string;
+  oauthState?: string;
 }
 
 export const sessionOptions: SessionOptions = {

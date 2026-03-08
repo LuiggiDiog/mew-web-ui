@@ -33,7 +33,7 @@ cp .env.example .env.local
 npm run db:generate
 npm run db:migrate
 
-# 5. Seed the first user (set SEED_EMAIL / SEED_PASSWORD / SEED_DISPLAY_NAME in .env.local)
+# 5. Seed the first manual user (set SEED_EMAIL / SEED_PASSWORD / SEED_DISPLAY_NAME in .env.local)
 npm run db:seed
 
 # 6. Start Ollama (separate terminal)
@@ -44,6 +44,14 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — redirects to `/login`, then `/chat`.
+
+For Google sign-in, also set:
+
+```bash
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+```
 
 Other commands:
 
@@ -60,7 +68,7 @@ npm run db:studio      # open Drizzle Studio (DB browser)
 
 ## What's implemented (Phase 1 + 2)
 
-- Login / logout with real auth (bcryptjs + iron-session)
+- Login / logout with real auth (Google OAuth for new users + email/password for manual DB users)
 - Route protection via middleware
 - PostgreSQL database (Drizzle ORM — users, conversations, messages, providers, settings)
 - Ollama streaming integration (real-time token streaming)

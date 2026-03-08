@@ -8,6 +8,7 @@ const mockRefresh = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
+  useSearchParams: () => ({ get: () => null }),
 }));
 
 beforeEach(() => {
@@ -21,6 +22,11 @@ function fillForm(email = "user@example.com", password = "secret123") {
 }
 
 describe("LoginCard", () => {
+  it("renders continue with Google button", () => {
+    render(<LoginCard />);
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeTruthy();
+  });
+
   it("renders email and password inputs", () => {
     render(<LoginCard />);
     expect(screen.getByLabelText("Email")).toBeTruthy();
@@ -30,6 +36,19 @@ describe("LoginCard", () => {
   it("renders the Sign in heading", () => {
     render(<LoginCard />);
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
+  });
+
+  it("renders manual access hint", () => {
+    render(<LoginCard />);
+    expect(
+      screen.getByText("Manual account access (database-created users only)")
+    ).toBeTruthy();
+  });
+
+  it("renders google auth form target", () => {
+    render(<LoginCard />);
+    const form = screen.getByRole("button", { name: "Continue with Google" }).closest("form");
+    expect(form?.getAttribute("action")).toBe("/api/auth/google/start");
   });
 
   it("submit button is disabled when fields are empty", () => {
@@ -46,13 +65,26 @@ describe("LoginCard", () => {
   it("shows loading state while submitting", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => new Promise(() => {})) // never resolves
+      vi.fn(() => new Promise(() => {}))
     );
     render(<LoginCard />);
     fillForm();
     fireEvent.submit(screen.getByRole("form"));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Signing in…" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Signing in..." })).toBeTruthy();
+    });
+  });
+
+  it("disables Google button while submitting manual login", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {}))
+    );
+    render(<LoginCard />);
+    fillForm();
+    fireEvent.submit(screen.getByRole("form"));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
     });
   });
 

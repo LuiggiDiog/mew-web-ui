@@ -28,7 +28,7 @@ async function seed() {
   const passwordHash = await bcrypt.hash(password, 12);
   const [user] = await db
     .insert(schema.users)
-    .values({ email, displayName, passwordHash })
+    .values({ email, displayName, passwordHash, authProvider: "local" })
     .onConflictDoNothing()
     .returning();
 

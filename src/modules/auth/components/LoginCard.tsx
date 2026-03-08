@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
 import { Button } from "@/modules/shared/components/Button";
 import { APP_NAME } from "@/modules/shared/constants";
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_code: "Google sign-in failed: missing authorization code.",
+  oauth_state: "Google sign-in failed: invalid session state. Please try again.",
+  oauth_exchange: "Google sign-in failed while validating your account.",
+  oauth_email_unverified: "Your Google email must be verified to continue.",
+  account_exists_manual:
+    "This email already exists as a manual account. Use email/password login.",
+};
+
 export function LoginCard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const oauthError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +51,10 @@ export function LoginCard() {
     }
   };
 
+  const oauthErrorMessage = oauthError
+    ? (OAUTH_ERROR_MESSAGES[oauthError] ?? "Could not sign in with Google.")
+    : null;
+
   return (
     <div
       className={cn(
@@ -46,19 +62,30 @@ export function LoginCard() {
         "p-8 shadow-xl shadow-black/20"
       )}
     >
-      {/* App name */}
       <div className="mb-8 text-center">
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/15 mb-3">
           <div className="w-4 h-4 rounded-sm bg-accent" />
         </div>
-        <p className="text-xs text-text-secondary uppercase tracking-widest">
-          {APP_NAME}
-        </p>
+        <p className="text-xs text-text-secondary uppercase tracking-widest">{APP_NAME}</p>
       </div>
 
-      <h1 className="text-xl font-semibold text-text-primary text-center mb-6">
-        Sign in
-      </h1>
+      <h1 className="text-xl font-semibold text-text-primary text-center mb-4">Sign in</h1>
+
+      <form action="/api/auth/google/start" method="get">
+        <Button type="submit" variant="outline" size="lg" className="w-full" disabled={loading}>
+          Continue with Google
+        </Button>
+      </form>
+
+      <p className="mt-3 text-center text-xs text-text-secondary">
+        New users must use Google sign-in
+      </p>
+
+      <div className="my-5 border-t border-border" />
+
+      <p className="mb-3 text-center text-xs text-text-secondary">
+        Manual account access (database-created users only)
+      </p>
 
       <form className="space-y-4" onSubmit={handleSubmit} aria-label="Login form">
         <div className="space-y-1.5">
@@ -89,7 +116,7 @@ export function LoginCard() {
           <input
             id="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="********"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -103,9 +130,8 @@ export function LoginCard() {
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-error text-center">{error}</p>
-        )}
+        {oauthErrorMessage && <p className="text-sm text-error text-center">{oauthErrorMessage}</p>}
+        {error && <p className="text-sm text-error text-center">{error}</p>}
 
         <Button
           type="submit"
@@ -114,12 +140,12 @@ export function LoginCard() {
           className="w-full mt-2"
           disabled={loading || !email || !password}
         >
-          {loading ? "Signing in…" : "Continue"}
+          {loading ? "Signing in..." : "Continue"}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-xs text-text-secondary leading-relaxed">
-        Private workspace &mdash; no accounts shared
+        Private workspace - no accounts shared
       </p>
     </div>
   );

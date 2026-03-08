@@ -25,6 +25,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { db } from "@/db";
+import { getSession } from "@/modules/auth/lib/session";
 import { getIronSession } from "iron-session";
 import { POST } from "./route";
 
@@ -40,6 +41,7 @@ beforeEach(() => {
   mockSession.userId = undefined;
   mockSession.email = undefined;
   mockSession.displayName = undefined;
+  vi.mocked(getSession).mockResolvedValue(mockSession as never);
   vi.mocked(getIronSession).mockResolvedValue(mockSession as never);
 });
 
@@ -93,5 +95,48 @@ describe("POST /api/auth/login", () => {
     });
     const res = await POST(req);
     expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when account is Google-only", async () => {
+    vi.mocked(db.query.users.findFirst).mockResolvedValue({
+      id: "user-2",
+      email: "google@test.com",
+      displayName: "Google User",
+      passwordHash: null,
+      authProvider: "google",
+      googleSub: "sub-123",
+      createdAt: new Date(),
+    });
+
+    const req = new Request("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "google@test.com", password: "any-password" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.error).toBe("This account uses Google sign-in");
+  });
+
+  it("returns 200 and saves session when credentials are valid", async () => {
+    vi.mocked(db.query.users.findFirst).mockResolvedValue({
+      id: "user-1",
+      email: "test@test.com",
+      displayName: "Test",
+      passwordHash: "$2b$12$wOiWb4.nzqxI6cl9hJT8veqiGVRqer9TiICKqQF8zQRK0jGzDzBJW",
+      authProvider: "local",
+      googleSub: null,
+      createdAt: new Date(),
+    });
+
+    const req = new Request("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "test@test.com", password: "correct-password" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockSession.save).toHaveBeenCalledTimes(1);
   });
 });

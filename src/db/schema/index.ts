@@ -11,12 +11,15 @@ import { relations } from "drizzle-orm";
 
 export const messageRoleEnum = pgEnum("message_role", ["user", "assistant"]);
 export const providerTypeEnum = pgEnum("provider_type", ["local", "external"]);
+export const authProviderEnum = pgEnum("auth_provider", ["local", "google"]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: text("email").notNull().unique(),
   displayName: text("display_name").notNull(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
+  authProvider: authProviderEnum("auth_provider").notNull().default("local"),
+  googleSub: text("google_sub").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
