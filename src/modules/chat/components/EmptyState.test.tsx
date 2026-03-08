@@ -7,12 +7,18 @@ import { QUICK_ACTIONS } from "@/modules/shared/constants";
 describe("EmptyState", () => {
   it("renders the greeting heading", () => {
     render(<EmptyState />);
-    expect(screen.getByText("Good morning.")).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2 })).toBeTruthy();
   });
 
-  it("renders the subtitle", () => {
+  it("renders the greeting subtitle", () => {
     render(<EmptyState />);
-    expect(screen.getByText("What are we working on?")).toBeTruthy();
+    const text = screen.getByRole("heading", { level: 2 }).textContent;
+    expect(text && text.length > 0).toBe(true);
+    expect(
+      screen.getByText(/Mew WebUI|IA|open source|Privacidad|Simplicidad|Prompt|prompt/i, {
+        selector: "p",
+      })
+    ).toBeTruthy();
   });
 
   it("renders all quick action buttons", () => {

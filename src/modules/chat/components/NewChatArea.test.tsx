@@ -60,7 +60,7 @@ describe("NewChatArea", () => {
   it("shows EmptyState when no messages", async () => {
     stubApiFetch({ ok: false });
     await act(async () => render(<NewChatArea />));
-    expect(screen.getByText("Good morning.")).toBeTruthy();
+    expect(screen.getByText("Explain something")).toBeTruthy();
   });
 
   it("renders the composer", async () => {

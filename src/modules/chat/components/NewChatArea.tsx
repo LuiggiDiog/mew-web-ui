@@ -8,7 +8,11 @@ import { ChatComposer } from "@/modules/chat/components/ChatComposer";
 import { useChatStore } from "@/modules/chat/store/chatStore";
 import type { Message } from "@/modules/chat/types";
 
-export function NewChatArea() {
+interface NewChatAreaProps {
+  welcomeSeed?: number;
+}
+
+export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
   const router = useRouter();
   const { activeModel, activeProvider, setStreamingMessageId } = useChatStore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -97,7 +101,7 @@ export function NewChatArea() {
     <>
       <main className="flex-1 overflow-y-auto flex items-center justify-center px-4">
         {messages.length === 0 ? (
-          <EmptyState />
+          <EmptyState welcomeSeed={welcomeSeed} />
         ) : (
           <div className="w-full max-w-2xl py-4">
             <MessageList messages={messages} />
