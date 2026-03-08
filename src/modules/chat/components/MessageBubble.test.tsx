@@ -36,6 +36,11 @@ describe("MessageBubble — user message", () => {
     render(<MessageBubble message={USER_MSG} />);
     expect(screen.queryByText("llama3.2")).toBeNull();
   });
+
+  it("shows createdAt time in deterministic UTC HH:MM format", () => {
+    render(<MessageBubble message={USER_MSG} />);
+    expect(screen.getByText("10:00")).toBeTruthy();
+  });
 });
 
 describe("MessageBubble — assistant message", () => {

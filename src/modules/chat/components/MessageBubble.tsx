@@ -9,7 +9,9 @@ interface MessageBubbleProps {
 
 function formatTime(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const hours = date.getUTCHours().toString().padStart(2, "0");
+  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
