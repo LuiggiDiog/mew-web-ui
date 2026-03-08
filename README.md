@@ -66,6 +66,7 @@ npm run db:studio      # open Drizzle Studio (DB browser)
 - Ollama streaming integration (real-time token streaming)
 - Full conversation + message persistence
 - Conversation list fetched from DB with real date grouping
+- Conversation deletion from context menu (right-click desktop / long-press touch) with confirmation dialog
 - Model selector populated from live Ollama API
 - Settings persistence (PATCH /api/settings)
 - Provider status (live health check)
@@ -107,6 +108,7 @@ See [AGENTS.md](./AGENTS.md) for the full project guide, roadmap, and rules.
 | Tailwind CSS | 4 |
 | Zustand | 5 |
 | Sileo | 0.1.5 |
+| Radix UI Primitives | 1.1.x |
 
 ---
 

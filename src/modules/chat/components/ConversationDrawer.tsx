@@ -6,6 +6,7 @@ import { cn } from "@/modules/shared/utils/cn";
 import { PlusIcon, XIcon } from "@/modules/shared/components/icons";
 import { useChatStore } from "@/modules/chat/store/chatStore";
 import { useMediaQuery } from "@/modules/shared/hooks/useMediaQuery";
+import { useToast } from "@/modules/shared/hooks/useToast";
 import { ConversationItem } from "@/modules/conversations/components/ConversationItem";
 import { groupConversationsByDate } from "@/modules/conversations/mocks";
 import { APP_NAME } from "@/modules/shared/constants";
@@ -21,6 +22,7 @@ export function ConversationDrawer() {
     selectedConversationId,
     selectConversation,
   } = useChatStore();
+  const toast = useToast();
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -62,6 +64,26 @@ export function ConversationDrawer() {
     selectConversation(null);
     router.push("/chat");
     if (!isDesktop) closeDrawer();
+  };
+
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error({ title: "Could not delete chat" });
+        return;
+      }
+
+      setConversations((prev) => prev.filter((conv) => conv.id !== id));
+      if (selectedConversationId === id) {
+        selectConversation(null);
+        router.push("/chat");
+      }
+
+      toast.success({ title: "Chat deleted" });
+    } catch {
+      toast.error({ title: "Could not delete chat" });
+    }
   };
 
   return (
@@ -148,6 +170,7 @@ export function ConversationDrawer() {
                       conversation={conv}
                       isActive={selectedConversationId === conv.id}
                       onClick={() => handleSelectConversation(conv.id)}
+                      onDelete={handleDeleteConversation}
                     />
                   ))}
                 </div>

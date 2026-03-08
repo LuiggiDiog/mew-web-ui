@@ -28,6 +28,7 @@ Design philosophy:
 | Tailwind CSS | 4 | Styling (CSS-first, no config file) |
 | Zustand | 5 | UI state only |
 | Sileo | 0.1.5 | Toast notifications |
+| Radix UI Primitives | 1.1.x | Accessible headless UI primitives (AlertDialog, ContextMenu) |
 
 TypeScript path alias: `@/*` maps to `./src/*`
 
@@ -168,6 +169,7 @@ Never add `console.log`, `logger.info`, or any logging that captures user prompt
 - All colors use CSS custom properties: `--color-accent`, `--color-surface`, etc.
 - Dark mode is the default (`color-scheme: dark` on `:root`)
 - Fonts: Geist Sans and Geist Mono via `next/font/google`
+- Prefer Radix UI primitives for accessible interactive patterns (dialogs, menus, popovers, etc.) when needed
 
 ---
 

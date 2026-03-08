@@ -37,7 +37,13 @@ const TODAY_CONV = {
 function stubFetch(conversations = [TODAY_CONV], user = { displayName: "Alice", email: "alice@example.com" }) {
   vi.stubGlobal(
     "fetch",
-    vi.fn((url: string) => {
+    vi.fn((url: string, options?: RequestInit) => {
+      if ((url as string).includes(`/api/conversations/${TODAY_CONV.id}`) && options?.method === "DELETE") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true }),
+        });
+      }
       if ((url as string).includes("/api/conversations")) {
         return Promise.resolve({
           ok: true,
@@ -115,8 +121,37 @@ describe("ConversationDrawer", () => {
     stubFetch([TODAY_CONV]);
     await act(async () => render(<ConversationDrawer />));
     await waitFor(() => screen.getByText("Today conversation"));
-    fireEvent.click(screen.getByText("Today conversation"));
+    fireEvent.click(screen.getByLabelText("Open conversation Today conversation"));
     expect(mockPush).toHaveBeenCalledWith(`/chat/${TODAY_CONV.id}`);
+  });
+
+  it("deletes a conversation after confirmation", async () => {
+    stubFetch([TODAY_CONV]);
+    await act(async () => render(<ConversationDrawer />));
+    await waitFor(() => screen.getByText("Today conversation"));
+
+    fireEvent.contextMenu(screen.getByLabelText("Open conversation Today conversation"));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete chat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Today conversation")).toBeNull();
+    });
+  });
+
+  it("navigates to /chat when deleting the selected conversation", async () => {
+    useChatStore.setState({ selectedConversationId: TODAY_CONV.id });
+    stubFetch([TODAY_CONV]);
+    await act(async () => render(<ConversationDrawer />));
+    await waitFor(() => screen.getByText("Today conversation"));
+
+    fireEvent.contextMenu(screen.getByLabelText("Open conversation Today conversation"));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete chat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/chat");
+    });
   });
 
   it("shows user display name when logged in", async () => {
