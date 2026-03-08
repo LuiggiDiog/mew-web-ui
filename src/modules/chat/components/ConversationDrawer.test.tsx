@@ -9,6 +9,7 @@ const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
+  usePathname: () => "/chat",
 }));
 
 // matchMedia not implemented in jsdom

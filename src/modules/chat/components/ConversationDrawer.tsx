@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
 import { PlusIcon, XIcon } from "@/modules/shared/components/icons";
 import { useChatStore } from "@/modules/chat/store/chatStore";
@@ -16,6 +16,7 @@ const DATE_GROUP_ORDER = ["Today", "Yesterday", "Last week"];
 
 export function ConversationDrawer() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     drawerOpen,
     closeDrawer,
@@ -30,13 +31,24 @@ export function ConversationDrawer() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ displayName: string; email: string } | null>(null);
 
-  useEffect(() => {
-    fetch("/api/conversations")
-      .then((r) => r.json())
-      .then((data) => { if (data.conversations) setConversations(data.conversations); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+  const loadConversations = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/conversations");
+      const data = await res.json();
+      if (data.conversations) setConversations(data.conversations);
+    } catch {
+      // no-op
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    void loadConversations();
+  }, [pathname, loadConversations]);
+
+  useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => { if (data.user) setUser(data.user); })
