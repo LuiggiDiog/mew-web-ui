@@ -14,8 +14,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Workspace",
+  title: "Mew WebUI",
   description: "Private AI workspace",
+  icons: {
+    icon: [
+      { url: "/isotype.svg", type: "image/svg+xml" },
+      { url: "/isotype.png", type: "image/png" },
+    ],
+    shortcut: "/isotype.svg",
+    apple: "/isotype.png",
+  },
 };
 
 export const viewport: Viewport = {

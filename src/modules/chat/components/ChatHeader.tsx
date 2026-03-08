@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/modules/shared/utils/cn";
 import {
@@ -46,7 +47,14 @@ export function ChatHeader({ title, showBack = false }: ChatHeaderProps) {
           </button>
         )}
 
-        <span className="text-sm font-medium text-text-primary truncate max-w-[200px]">
+        <Image
+          src="/isotype.svg"
+          alt={`${APP_NAME} isotype`}
+          width={20}
+          height={20}
+          className="h-5 w-5 shrink-0"
+        />
+        <span className="text-sm font-medium text-text-primary truncate max-w-[172px]">
           {title ?? APP_NAME}
         </span>
       </div>

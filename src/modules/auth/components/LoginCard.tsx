@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
 import { Button } from "@/modules/shared/components/Button";
@@ -63,9 +64,14 @@ export function LoginCard() {
       )}
     >
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/15 mb-3">
-          <div className="w-4 h-4 rounded-sm bg-accent" />
-        </div>
+        <Image
+          src="/isotype.svg"
+          alt={`${APP_NAME} isotype`}
+          width={40}
+          height={40}
+          className="mx-auto mb-3 h-10 w-10"
+          priority
+        />
         <p className="text-xs text-text-secondary uppercase tracking-widest">{APP_NAME}</p>
       </div>
 

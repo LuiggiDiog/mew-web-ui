@@ -1,4 +1,4 @@
-# my-web-ui — Private AI Workspace
+# Mew WebUI — Private AI Workspace
 
 A private, self-hosted web interface for interacting with local and external AI models.
 

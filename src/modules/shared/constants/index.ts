@@ -1,4 +1,4 @@
-export const APP_NAME = "Workspace";
+export const APP_NAME = "Mew WebUI";
 
 export const DEFAULT_PROVIDER = "ollama";
 export const DEFAULT_MODEL = "llama3.2";

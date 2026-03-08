@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
@@ -125,7 +126,16 @@ export function ConversationDrawer() {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-border/50 shrink-0">
-          <span className="text-sm font-semibold text-text-primary">{APP_NAME}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Image
+              src="/isotype.svg"
+              alt={`${APP_NAME} isotype`}
+              width={20}
+              height={20}
+              className="h-5 w-5 shrink-0"
+            />
+            <span className="text-sm font-semibold text-text-primary truncate">Conversations</span>
+          </div>
           {!isDesktop && (
             <button
               onClick={closeDrawer}
