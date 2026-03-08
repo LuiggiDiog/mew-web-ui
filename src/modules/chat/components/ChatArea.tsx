@@ -97,8 +97,13 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
 
   return (
     <>
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+      <main
+        className="flex-1 overflow-y-auto"
+        role="main"
+        aria-label="Conversation messages"
+        aria-busy={streaming}
+      >
+        <div className="w-full max-w-4xl mx-auto px-2 sm:px-3 md:px-4 py-2 md:py-4">
           {messages.length > 0 ? (
             <MessageList messages={messages} />
           ) : (
@@ -112,3 +117,4 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     </>
   );
 }
+

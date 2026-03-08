@@ -98,6 +98,25 @@ describe("ChatArea", () => {
     expect(screen.getByPlaceholderText("Message…")).toBeTruthy();
   });
 
+  it("uses compact mobile spacing in the scroll area", async () => {
+    stubApiFetch(false);
+    await act(async () =>
+      render(<ChatArea conversationId="conv-1" initialMessages={INITIAL_MESSAGES} />)
+    );
+
+    const main = screen.getByRole("main");
+    expect(main.getAttribute("aria-label")).toBe("Conversation messages");
+    expect(main.getAttribute("aria-busy")).toBe("false");
+    const wrapper = main.firstElementChild as HTMLElement | null;
+    expect(wrapper).toBeTruthy();
+    expect(wrapper?.className).toContain("w-full");
+    expect(wrapper?.className).toContain("max-w-4xl");
+    expect(wrapper?.className).toContain("px-2");
+    expect(wrapper?.className).toContain("sm:px-3");
+    expect(wrapper?.className).toContain("md:px-4");
+    expect(wrapper?.className).toContain("py-2");
+    expect(wrapper?.className).toContain("md:py-4");
+  });
   it("adds user message optimistically after sending", async () => {
     stubApiFetch(true, "Great answer");
     await act(async () =>
@@ -170,3 +189,4 @@ describe("ChatArea", () => {
     });
   });
 });
+
