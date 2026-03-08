@@ -1,6 +1,7 @@
 import { ChatHeader } from "@/modules/chat/components/ChatHeader";
 import { SettingsSection } from "@/modules/settings/components/SettingsSection";
 import { SettingsToggle } from "@/modules/settings/components/SettingsToggle";
+import { DefaultModelPicker } from "@/modules/settings/components/DefaultModelPicker";
 import { ProvidersList } from "@/modules/settings/components/ProvidersList";
 
 export default function SettingsPage() {
@@ -11,6 +12,7 @@ export default function SettingsPage() {
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
           <SettingsSection title="General">
+            <DefaultModelPicker />
             <SettingsToggle
               label="Save conversation history"
               description="Store conversations locally on this device"

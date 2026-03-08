@@ -13,15 +13,26 @@ export function ModelSelector() {
   const [ollamaReachable, setOllamaReachable] = useState(true);
 
   useEffect(() => {
-    fetch("/api/providers/ollama/models")
-      .then((r) => {
-        if (!r.ok) { setOllamaReachable(false); return null; }
-        return r.json();
-      })
-      .then((data) => {
-        if (data?.models) setOllamaModels(data.models);
+    Promise.all([
+      fetch("/api/providers/ollama/models").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/settings").then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([modelData, settingsData]) => {
+        if (!modelData?.models) { setOllamaReachable(false); return; }
+        const models: OllamaModel[] = modelData.models;
+        setOllamaModels(models);
+        if (models.length === 0) return;
+        const preferred: string = settingsData?.defaultModel ?? "";
+        const target = models.some((m) => m.name === preferred)
+          ? preferred
+          : models[0].name;
+        if (target !== activeModel) {
+          setModel(target);
+          setProvider("ollama");
+        }
       })
       .catch(() => setOllamaReachable(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -35,7 +46,13 @@ export function ModelSelector() {
         )}
         aria-label="Select model"
       >
-        <span className="font-medium text-text-primary">{activeModel}</span>
+        <span className="font-medium text-text-primary">
+          {ollamaModels.length > 0
+            ? activeModel
+            : ollamaReachable
+              ? "Loading..."
+              : "No model"}
+        </span>
         <span className="text-text-secondary">/</span>
         <span>Ollama</span>
         <ChevronDownIcon
