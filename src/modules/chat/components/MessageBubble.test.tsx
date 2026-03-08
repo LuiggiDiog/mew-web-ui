@@ -21,6 +21,12 @@ const ASSISTANT_MSG: Message = {
   model: "llama3.2",
 };
 
+const ASSISTANT_THINKING_MSG: Message = {
+  ...ASSISTANT_MSG,
+  id: "msg-3",
+  content: "",
+};
+
 describe("MessageBubble — user message", () => {
   it("renders the message content", () => {
     render(<MessageBubble message={USER_MSG} />);
@@ -84,5 +90,11 @@ describe("MessageBubble — assistant message", () => {
     const noModel = { ...ASSISTANT_MSG, model: undefined };
     render(<MessageBubble message={noModel} />);
     expect(screen.queryByText("llama3.2")).toBeNull();
+  });
+
+  it("shows animated thinking indicator for empty assistant response", () => {
+    const { container } = render(<MessageBubble message={ASSISTANT_THINKING_MSG} />);
+    expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
+    expect(container.querySelectorAll("[data-thinking-dot='true']").length).toBe(3);
   });
 });
