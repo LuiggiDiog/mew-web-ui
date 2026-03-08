@@ -7,7 +7,7 @@ import { ProvidersList } from "@/modules/settings/components/ProvidersList";
 export default function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
-      <ChatHeader title="Settings" />
+      <ChatHeader title="Settings" showBack backMode="history" showSettingsButton={false} />
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 

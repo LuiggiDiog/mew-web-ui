@@ -5,6 +5,9 @@ import { ChatHeader } from "./ChatHeader";
 import { useChatStore } from "@/modules/chat/store/chatStore";
 import { APP_NAME, DEFAULT_MODEL, DEFAULT_PROVIDER } from "@/modules/shared/constants";
 
+const backMock = vi.fn();
+const pushMock = vi.fn();
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -23,7 +26,17 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    back: backMock,
+    push: pushMock,
+  }),
+}));
+
 beforeEach(() => {
+  backMock.mockReset();
+  pushMock.mockReset();
+
   useChatStore.setState({
     drawerOpen: false,
     selectedConversationId: null,
@@ -68,6 +81,11 @@ describe("ChatHeader", () => {
     expect(link.getAttribute("href")).toBe("/chat");
   });
 
+  it("shows history back button when showBack=true and backMode=history", () => {
+    render(<ChatHeader showBack backMode="history" />);
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+  });
+
   it("renders a settings link", () => {
     render(<ChatHeader />);
     expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy();
@@ -76,5 +94,10 @@ describe("ChatHeader", () => {
   it("settings link points to /settings", () => {
     render(<ChatHeader />);
     expect(screen.getByRole("link", { name: "Settings" }).getAttribute("href")).toBe("/settings");
+  });
+
+  it("does not render settings link when showSettingsButton=false", () => {
+    render(<ChatHeader showSettingsButton={false} />);
+    expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
   });
 });

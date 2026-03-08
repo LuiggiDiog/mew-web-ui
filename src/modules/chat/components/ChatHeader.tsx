@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/modules/shared/utils/cn";
 import {
   MenuIcon,
@@ -14,10 +15,27 @@ import { APP_NAME } from "@/modules/shared/constants";
 interface ChatHeaderProps {
   title?: string;
   showBack?: boolean;
+  backMode?: "chat" | "history";
+  showSettingsButton?: boolean;
 }
 
-export function ChatHeader({ title, showBack = false }: ChatHeaderProps) {
+export function ChatHeader({
+  title,
+  showBack = false,
+  backMode = "chat",
+  showSettingsButton = true,
+}: ChatHeaderProps) {
   const { toggleDrawer } = useChatStore();
+  const router = useRouter();
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/chat");
+  };
 
   return (
     <header
@@ -30,13 +48,23 @@ export function ChatHeader({ title, showBack = false }: ChatHeaderProps) {
       {/* Left side */}
       <div className="flex items-center gap-2">
         {showBack ? (
-          <Link
-            href="/chat"
-            className="p-2 -ml-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-            aria-label="Back to chat"
-          >
-            <ArrowLeftIcon />
-          </Link>
+          backMode === "history" ? (
+            <button
+              onClick={handleBack}
+              className="p-2 -ml-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+              aria-label="Back"
+            >
+              <ArrowLeftIcon />
+            </button>
+          ) : (
+            <Link
+              href="/chat"
+              className="p-2 -ml-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+              aria-label="Back to chat"
+            >
+              <ArrowLeftIcon />
+            </Link>
+          )
         ) : (
           <button
             onClick={toggleDrawer}
@@ -60,13 +88,17 @@ export function ChatHeader({ title, showBack = false }: ChatHeaderProps) {
       </div>
 
       {/* Right side */}
-      <Link
-        href="/settings"
-        className="p-2 -mr-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
-        aria-label="Settings"
-      >
-        <SettingsIcon />
-      </Link>
+      {showSettingsButton ? (
+        <Link
+          href="/settings"
+          className="p-2 -mr-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+          aria-label="Settings"
+        >
+          <SettingsIcon />
+        </Link>
+      ) : (
+        <div className="w-9 h-9" aria-hidden />
+      )}
     </header>
   );
 }
