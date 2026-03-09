@@ -7,7 +7,7 @@ Read it before making any changes.
 
 ## Project Purpose
 
-**my-web-ui** is a private, self-hosted AI workspace for interacting with local and external LLM providers.
+**Mew WebUI** is a private, self-hosted AI workspace for interacting with local and external LLM providers.
 
 Design philosophy:
 - Privacy-first: no telemetry, no shared accounts, no prompt logging

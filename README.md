@@ -1,19 +1,8 @@
-﻿# Mew WebUI â€” Private AI Workspace
+# Mew WebUI
 
-A private, self-hosted web interface for interacting with local and external AI models.
+Private, self-hosted AI workspace for local and external LLM providers.
 
-> **Current phase: Phase 2 â€” Core Development (complete)**
-> Real auth, PostgreSQL, Ollama streaming, full conversation persistence.
-
----
-
-## What is this?
-
-A personal AI workspace that runs entirely on your machine. Connect local models via Ollama
-or external providers like OpenAI and Anthropic. No data leaves your machine unless you configure
-an external provider.
-
-Designed to feel like a focused work tool â€” clean, fast, and private.
+Current status: Phase 3 (hardening and expansion), with Phase 1 and Phase 2 completed.
 
 ---
 
@@ -33,136 +22,112 @@ Mew WebUI is inspired by tools like Open WebUI, but with a sharper focus on:
 
 ---
 
-## Running the project
+## Features
 
-```bash
-# 1. Start the database
-docker compose up -d
-
-# 2. Install dependencies
-npm install
-
-# 3. Copy env file and set SESSION_SECRET
-cp .env.example .env.local
-
-# 4. Run migrations
-npm run db:generate
-npm run db:migrate
-
-# 5. Seed the first manual user (set SEED_EMAIL / SEED_PASSWORD / SEED_DISPLAY_NAME in .env.local)
-npm run db:seed
-
-# 6. Start Ollama (separate terminal)
-ollama serve
-
-# 7. Start dev server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) â€” redirects to `/login`, then `/chat`.
-
-For Google sign-in, also set:
-
-```bash
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-`GOOGLE_REDIRECT_URI` is optional if you want automatic origin-based behavior (localhost/ngrok).
-`NEXT_PUBLIC_APP_URL` is recommended for correct Open Graph/Twitter link previews when sharing.
-
-Other commands:
-
-```bash
-npm run build          # production build + TypeScript check
-npm run lint           # ESLint
-npm run start          # start production server (after build)
-npm test               # run all tests
-npm run test:coverage  # test coverage report
-npm run db:studio      # open Drizzle Studio (DB browser)
-```
-
-Testing flag for Ollama model list:
-
-```bash
-OLLAMA_TEST_ONLY_MODEL_ENABLED=true
-```
-
-When enabled, `/api/providers/ollama/models` only returns:
-`hf.co/mradermacher/Dolphin-Mistral-24B-Venice-Edition-GGUF:Q4_K_M`.
-
----
-
-## What's implemented (Phase 1 + 2)
-
-- Login / logout with real auth (Google OAuth for new users + email/password for manual DB users)
-- Route protection via middleware
-- PostgreSQL database (Drizzle ORM â€” users, conversations, messages, providers, settings)
-- Ollama streaming integration (real-time token streaming)
-- Full conversation + message persistence
-- Assistant response regeneration + user message editing (with streamed re-generation)
-- Conversation list fetched from DB with real date grouping
-- Conversation deletion from context menu (right-click desktop / long-press touch) with confirmation dialog
-- Model selector populated from live Ollama API
-- Settings persistence (PATCH /api/settings)
-- Provider status (live health check)
-- TDD test suite (Vitest + Testing Library)
-- Chat empty state, mobile-first dark-mode UI
-
----
-
-## Project structure
-
-```
-src/
-  app/                    â€” Next.js App Router pages and layouts
-    (auth)/login/         â€” Login page
-    (private)/            â€” App shell (chat + settings)
-    layout.tsx            â€” Root layout with Sileo toasts
-    globals.css           â€” Design tokens (Tailwind v4 @theme)
-  modules/
-    auth/                 â€” Auth types, mocks, components
-    chat/                 â€” Chat components, Zustand store, mocks
-    conversations/        â€” Conversation list, mocks, types
-    providers/            â€” Provider types, mocks, components
-    settings/             â€” Settings components, mocks, types
-    shared/               â€” Button, Badge, Avatar, icons, hooks, utils
-  db/                     â€” Database layer (placeholder, Phase 2)
-```
-
-See [AGENTS.md](./AGENTS.md) for the full project guide, roadmap, and rules.
-
----
+- Google OAuth for new users and email/password login for manually created DB users
+- PostgreSQL + Drizzle ORM (users, conversations, messages, providers, settings)
+- Streaming chat with Ollama
+- Conversation persistence, message edit, and assistant regenerate
+- Mobile-first UI with Next.js App Router
+- No telemetry and no prompt logging
 
 ## Tech stack
 
-| Tool | Version |
-|------|---------|
-| Next.js | 16 (App Router) |
-| React | 19 |
-| TypeScript | 5 |
-| Tailwind CSS | 4 |
-| Zustand | 5 |
-| Sileo | 0.1.5 |
-| Radix UI Primitives | 1.1.x |
+- Next.js 16
+- React 19
+- TypeScript 5 (strict)
+- Tailwind CSS 4
+- Zustand 5 (UI state only)
+- Drizzle ORM + postgres
+- Vitest + Testing Library
 
----
+## Prerequisites
 
-## Tech stack (Phase 2 additions)
+- Node.js 20+
+- npm 10+
+- Docker + Docker Compose
+- Ollama (optional but needed for local model chat)
 
-| Tool | Version | Role |
-|------|---------|------|
-| Drizzle ORM | latest | DB schema + migrations |
-| postgres | latest | PostgreSQL driver (ESM-native) |
-| iron-session | latest | Cookie session management |
-| bcryptjs | latest | Password hashing |
-| Vitest | 4 | Test runner |
+## Quick start
 
-## Roadmap
+1. Clone and install dependencies.
+```bash
+git clone <your-repo-url>
+cd <repo-folder>
+npm install
+```
 
-- **Phase 1** (complete): UI prototype â€” screens, navigation, mocks
-- **Phase 2** (complete): Core development â€” real auth, PostgreSQL, Ollama streaming, TDD
-- **Phase 3** (next): Hardening â€” advanced features, performance, security
+2. Start PostgreSQL containers.
+```bash
+docker compose up -d
+```
 
+3. Create your local env file.
+```bash
+cp .env.example .env
+```
+Windows PowerShell:
+```powershell
+Copy-Item .env.example .env
+```
+
+4. Update `.env` values (at minimum set a strong `SESSION_SECRET`).
+
+5. Run migrations and seed a manual user.
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
+
+6. Start Ollama (if using local models).
+```bash
+ollama serve
+```
+
+7. Start the app.
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Required environment variables
+
+`.env.example` is intentionally versioned and contains only safe placeholders.
+
+- `DATABASE_URL`
+- `DATABASE_URL_TEST`
+- `SESSION_SECRET`
+- `SESSION_COOKIE_NAME`
+- `OLLAMA_BASE_URL`
+- `OLLAMA_TEST_ONLY_MODEL_ENABLED`
+- `NEXT_PUBLIC_APP_URL`
+
+For Google OAuth:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI` (optional)
+
+## Scripts
+
+- `npm run dev` - start dev server
+- `npm run build` - production build
+- `npm run start` - run production build
+- `npm run lint` - ESLint
+- `npm test` - run tests
+- `npm run test:coverage` - coverage report
+- `npm run db:generate` - generate Drizzle artifacts
+- `npm run db:migrate` - apply migrations
+- `npm run db:seed` - seed first manual user
+- `npm run db:studio` - open Drizzle Studio
+
+## Privacy and security notes
+
+- Do not commit `.env`, `.env.local`, or real credentials.
+- Rotate any credential that was ever exposed in git history, issue comments, screenshots, or chats.
+- Keep all model/provider calls behind internal API routes.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
