@@ -112,16 +112,15 @@ describe("MessageBubble image messages", () => {
     expect(image.getAttribute("src")).toBe("/generated/test.png");
   });
 
-  it("renders thinking dots when image message is still loading", () => {
+  it("renders shimmer placeholder when image message is still loading", () => {
     const loadingImageMsg: Message = {
       ...ASSISTANT_MSG,
       type: "image",
       content: "",
     };
 
-    const { container } = render(<MessageBubble message={loadingImageMsg} />);
-    expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
-    expect(container.querySelectorAll("[data-thinking-dot='true']").length).toBe(3);
+    render(<MessageBubble message={loadingImageMsg} />);
+    expect(screen.getByLabelText("Generating image")).toBeTruthy();
   });
 
   it("does not render the image path as visible text", () => {

@@ -62,6 +62,12 @@ Follow these rules strictly:
    - complex or text-heavy scenes: 140-220 words
    Stay shorter when simplicity is part of the request.
 
+11. You may receive prior conversation messages for context before the current request.
+    Use them to understand references like "add X to it", "make it more Y", "now change the background to Z", or "remove the X".
+    The conversation history tells you what the user previously requested and what was generated.
+    Incorporate relevant context from prior messages into the new prompt, but always treat the latest user message as the primary intent.
+    If there is no prior context, treat the current request as standalone.
+
 Output only the final enhanced prompt as one plain paragraph.
 No explanations.
 No markdown.
@@ -87,10 +93,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, conversationId, size } = body as {
+  const { prompt, conversationId, width, height, chatHistory } = body as {
     prompt?: string;
     conversationId?: string;
-    size?: string;
+    width?: number;
+    height?: number;
+    chatHistory?: { role: string; content: string }[];
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
@@ -176,9 +184,15 @@ export async function POST(request: NextRequest) {
     try {
       let enhanced = "";
 
+      const historyMessages = (chatHistory ?? [])
+        .filter((m) => typeof m.role === "string" && typeof m.content === "string")
+        .slice(-10)
+        .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
       for await (const chunk of ollamaClient.chat(
         [
           { role: "system", content: ENHANCE_SYSTEM_PROMPT },
+          ...historyMessages,
           { role: "user", content: inputPrompt },
         ],
         enhanceModel,
@@ -204,10 +218,9 @@ export async function POST(request: NextRequest) {
   let imageBuffer: Buffer;
 
   try {
-    imageBuffer = await comfyClient.generate(
-      finalPrompt,
-      size === "large" ? "large" : "small",
-    );
+    const imgWidth = typeof width === "number" && width >= 512 && width <= 2048 ? width : 1024;
+    const imgHeight = typeof height === "number" && height >= 512 && height <= 2048 ? height : 1024;
+    imageBuffer = await comfyClient.generate(finalPrompt, imgWidth, imgHeight);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
 

@@ -9,3 +9,4 @@ export { RefreshIcon } from "./RefreshIcon";
 export { EditIcon } from "./EditIcon";
 export { ImageIcon } from "./ImageIcon";
 export { StopIcon } from "./StopIcon";
+export { DownloadIcon } from "./DownloadIcon";

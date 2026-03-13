@@ -10,6 +10,9 @@ interface ChatState {
   activeModel: string;
   activeProvider: string;
   streamingMessageId: string | null;
+  imageMode: boolean;
+  imageWidth: number;
+  imageHeight: number;
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
@@ -17,6 +20,8 @@ interface ChatState {
   setModel: (model: string) => void;
   setProvider: (provider: string) => void;
   setStreamingMessageId: (id: string | null) => void;
+  toggleImageMode: () => void;
+  setImageDimensions: (width: number, height: number) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -25,6 +30,9 @@ export const useChatStore = create<ChatState>((set) => ({
   activeModel: DEFAULT_MODEL,
   activeProvider: DEFAULT_PROVIDER,
   streamingMessageId: null,
+  imageMode: false,
+  imageWidth: 1024,
+  imageHeight: 1024,
   openDrawer: () => set({ drawerOpen: true }),
   closeDrawer: () => set({ drawerOpen: false }),
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
@@ -32,4 +40,6 @@ export const useChatStore = create<ChatState>((set) => ({
   setModel: (model) => set({ activeModel: model }),
   setProvider: (provider) => set({ activeProvider: provider }),
   setStreamingMessageId: (id) => set({ streamingMessageId: id }),
+  toggleImageMode: () => set((s) => ({ imageMode: !s.imageMode })),
+  setImageDimensions: (width, height) => set({ imageWidth: width, imageHeight: height }),
 }));

@@ -54,6 +54,9 @@ beforeEach(() => {
     activeModel: DEFAULT_MODEL,
     activeProvider: DEFAULT_PROVIDER,
     streamingMessageId: null,
+    imageMode: false,
+    imageWidth: 1024,
+    imageHeight: 1024,
   });
 });
 
@@ -211,7 +214,7 @@ describe("NewChatArea image generation", () => {
         "/api/image",
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ prompt: "a cat", size: "small" }),
+          body: JSON.stringify({ prompt: "a cat", width: 1024, height: 1024 }),
         })
       );
     });
@@ -259,7 +262,7 @@ describe("NewChatArea image generation", () => {
     });
 
     expect(screen.getByText("a cat")).toBeTruthy();
-    expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
+    expect(screen.getByLabelText("Generating image")).toBeTruthy();
 
     resolveImage?.({
       imageUrl: "/generated/test.png",

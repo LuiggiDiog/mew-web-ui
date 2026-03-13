@@ -31,9 +31,9 @@ export class ComfyUIClient {
     return names.map((name) => ({ name }));
   }
 
-  async generate(prompt: string, size: "small" | "large" = "large"): Promise<Buffer> {
+  async generate(prompt: string, width: number = 1024, height: number = 1024): Promise<Buffer> {
     const clientId = crypto.randomUUID();
-    const workflow = this.buildWorkflow(prompt, size);
+    const workflow = this.buildWorkflow(prompt, width, height);
 
     const submitRes = await fetch(`${this.baseUrl}/prompt`, {
       method: "POST",
@@ -86,8 +86,7 @@ export class ComfyUIClient {
 
   // Z-Image Turbo workflow (matches z_image_turbo_example)
   // Models: z_image_turbo_nvfp4.safetensors (UNET) + qwen_3_4b_fp4_mixed.safetensors (CLIP) + ae.safetensors (VAE)
-  private buildWorkflow(prompt: string, size: "small" | "large" = "large"): object {
-    const dim = size === "small" ? 512 : 1024;
+  private buildWorkflow(prompt: string, width: number = 1024, height: number = 1024): object {
     return {
       // UNET model loader
       "16": {
@@ -137,10 +136,10 @@ export class ComfyUIClient {
           text: "blurry ugly bad",
         },
       },
-      // Latent image (1024x1024 to match z-image native resolution)
+      // Latent image
       "13": {
         class_type: "EmptySD3LatentImage",
-        inputs: { width: dim, height: dim, batch_size: 1 },
+        inputs: { width, height, batch_size: 1 },
       },
       // Sampler (9 steps, euler/simple as in original)
       "3": {

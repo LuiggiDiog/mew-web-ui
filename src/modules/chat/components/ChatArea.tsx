@@ -52,7 +52,8 @@ async function readStream(
 
 export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   const router = useRouter();
-  const { activeModel, activeProvider, setStreamingMessageId } = useChatStore();
+  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight } =
+    useChatStore();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [streaming, setStreaming] = useState(false);
   const requestAbortRef = useRef<AbortController | null>(null);
@@ -236,7 +237,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   );
 
   const handleSendImage = useCallback(
-    async (prompt: string, size: "small" | "large" = "small") => {
+    async (prompt: string, width: number = imageWidth, height: number = imageHeight) => {
       if (streaming) return;
 
       const userMsg: Message = {
@@ -266,11 +267,16 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
       requestAbortRef.current = abortController;
 
       try {
+        const chatHistory = messages
+          .filter((m) => !(m.type === "image" && m.role === "assistant"))
+          .slice(-10)
+          .map((m) => ({ role: m.role, content: m.content }));
+
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
-          body: JSON.stringify({ prompt, conversationId, size }),
+          body: JSON.stringify({ prompt, conversationId, width, height, chatHistory }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
@@ -297,7 +303,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
         setStreamingMessageId(null);
       }
     },
-    [conversationId, activeModel, streaming, router, setStreamingMessageId]
+    [conversationId, activeModel, streaming, router, setStreamingMessageId, messages, imageWidth, imageHeight]
   );
 
   return (

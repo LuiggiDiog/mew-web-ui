@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChatComposer } from "./ChatComposer";
+import { useChatStore } from "@/modules/chat/store/chatStore";
 
 vi.mock("@/modules/chat/components/ModelSelector", () => ({
   ModelSelector: () => <div aria-label="Select model" />,
@@ -16,6 +17,7 @@ beforeEach(() => {
       json: () => Promise.resolve(null),
     })
   );
+  useChatStore.setState({ imageMode: false, imageWidth: 1024, imageHeight: 1024 });
 });
 
 describe("ChatComposer", () => {
@@ -123,10 +125,10 @@ describe("ChatComposer image mode", () => {
     render(<ChatComposer />);
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
-    expect(screen.getByText("Generating via ComfyUI")).toBeTruthy();
+    expect(screen.getByText(/ComfyUI/)).toBeTruthy();
   });
 
-  it("sends image requests via onSendImage with default small size", async () => {
+  it("sends image requests via onSendImage with default 1:1 dimensions", async () => {
     const onSend = vi.fn();
     const onSendImage = vi.fn();
     render(<ChatComposer onSend={onSend} onSendImage={onSendImage} />);
@@ -140,16 +142,16 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a cat", "small");
+    expect(onSendImage).toHaveBeenCalledWith("a cat", 1024, 1024);
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it("sends large image when 1024 is selected", async () => {
+  it("sends 16:9 image when 16:9 preset is selected", async () => {
     const onSendImage = vi.fn();
     render(<ChatComposer onSendImage={onSendImage} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
-    fireEvent.click(screen.getByRole("button", { name: "1024" }));
+    fireEvent.click(screen.getByRole("button", { name: "16:9" }));
     fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
       target: { value: "a castle" },
     });
@@ -158,16 +160,15 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a castle", "large");
+    expect(onSendImage).toHaveBeenCalledWith("a castle", 1024, 576);
   });
 
-  it("sends small image when 512 is selected", async () => {
+  it("sends 9:16 image when 9:16 preset is selected", async () => {
     const onSendImage = vi.fn();
     render(<ChatComposer onSendImage={onSendImage} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
-    fireEvent.click(screen.getByRole("button", { name: "1024" }));
-    fireEvent.click(screen.getByRole("button", { name: "512" }));
+    fireEvent.click(screen.getByRole("button", { name: "9:16" }));
     fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
       target: { value: "a tree" },
     });
@@ -176,19 +177,19 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a tree", "small");
+    expect(onSendImage).toHaveBeenCalledWith("a tree", 576, 1024);
   });
 
-  it("shows size buttons only in image mode", () => {
+  it("shows aspect ratio preset buttons only in image mode", () => {
     render(<ChatComposer />);
 
-    expect(screen.queryByRole("button", { name: "512" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "1024" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "1:1" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "16:9" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
 
-    expect(screen.getByRole("button", { name: "512" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "1024" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "1:1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "16:9" })).toBeTruthy();
   });
 
   it("returns to text behavior when image mode is disabled", async () => {

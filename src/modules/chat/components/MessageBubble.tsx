@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { cn } from "@/modules/shared/utils/cn";
 import { Avatar } from "@/modules/shared/components/Avatar";
 import { Badge } from "@/modules/shared/components/Badge";
 import { EditableChatMessage } from "@/modules/chat/components/EditableChatMessage";
 import { RefreshIcon } from "@/modules/shared/components/icons";
+import { ImageGeneratingPlaceholder } from "@/modules/chat/components/ImageGeneratingPlaceholder";
+import { ImageLightbox } from "@/modules/chat/components/ImageLightbox";
 import type { Message } from "@/modules/chat/types";
 
 interface MessageBubbleProps {
@@ -29,8 +32,10 @@ export function MessageBubble({
   onEdit,
   actionsDisabled = false,
 }: MessageBubbleProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const isUser = message.role === "user";
   const isThinking = !isUser && message.content.trim().length === 0;
+  const isImageMessage = message.type === "image";
 
   if (isUser) {
     return (
@@ -74,12 +79,7 @@ export function MessageBubble({
   }
 
   return (
-    <div
-      className={cn(
-        "flex gap-2.5 max-w-[85%]",
-        "mr-auto",
-      )}
-    >
+    <div className={cn("flex gap-2.5 max-w-[85%]", "mr-auto")}>
       <Avatar
         name="AI"
         role="assistant"
@@ -87,28 +87,42 @@ export function MessageBubble({
         className="mt-1 shrink-0"
       />
 
-      <div
-        className={cn(
-          "flex flex-col gap-1",
-          "items-start",
-        )}
-      >
+      <div className={cn("flex flex-col gap-1", "items-start")}>
         <div
           className={cn(
             "text-sm leading-relaxed",
-            message.type === "image" && message.content
+            isImageMessage && message.content
               ? "p-0 bg-transparent border-transparent"
-              : "px-4 py-2.5 whitespace-pre-wrap bg-surface text-text-primary rounded-2xl border border-border/50 rounded-tl-sm",
+              : isImageMessage && isThinking
+                ? "p-0 bg-transparent border-transparent"
+                : "px-4 py-2.5 whitespace-pre-wrap bg-surface text-text-primary rounded-2xl border border-border/50 rounded-tl-sm",
           )}
         >
-          {message.type === "image" && message.content ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={message.content}
-              alt="Generated image"
-              className="rounded-2xl max-w-full"
-              loading="lazy"
-            />
+          {isImageMessage && message.content ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="cursor-zoom-in group relative block outline-none"
+                aria-label="View full image"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={message.content}
+                  alt="Generated image"
+                  className="rounded-2xl max-w-full transition-transform duration-200 group-hover:scale-[1.02]"
+                  loading="lazy"
+                />
+              </button>
+              {lightboxOpen && (
+                <ImageLightbox
+                  src={message.content}
+                  onClose={() => setLightboxOpen(false)}
+                />
+              )}
+            </>
+          ) : isImageMessage && isThinking ? (
+            <ImageGeneratingPlaceholder />
           ) : isThinking ? (
             <div
               className="inline-flex items-center gap-1.5 py-0.5"

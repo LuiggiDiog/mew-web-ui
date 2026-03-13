@@ -111,7 +111,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("a red cat", "small");
+    const promise = client.generate("a red cat", 512, 512);
 
     await vi.advanceTimersByTimeAsync(1_000);
 
@@ -154,7 +154,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("mountain", "large");
+    const promise = client.generate("mountain", 1024, 1024);
     await vi.advanceTimersByTimeAsync(1_000);
     await promise;
 
@@ -167,7 +167,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
     const client = makeClient();
-    await expect(client.generate("test", "small")).rejects.toThrow(
+    await expect(client.generate("test", 512, 512)).rejects.toThrow(
       "ComfyUI prompt submission failed: 500"
     );
   });
@@ -193,7 +193,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("slow", "small");
+    const promise = client.generate("slow", 512, 512);
     const assertion = expect(promise).rejects.toThrow("ComfyUI generation timed out");
 
     await vi.advanceTimersByTimeAsync(121_000);

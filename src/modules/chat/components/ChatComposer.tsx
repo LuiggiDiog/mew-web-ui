@@ -1,13 +1,28 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
 import { SendIcon, ImageIcon, StopIcon } from "@/modules/shared/components/icons";
 import { ModelSelector } from "@/modules/chat/components/ModelSelector";
+import { useChatStore } from "@/modules/chat/store/chatStore";
+
+type ImagePreset = {
+  label: string;
+  width: number;
+  height: number;
+};
+
+const IMAGE_PRESETS: ImagePreset[] = [
+  { label: "1:1", width: 1024, height: 1024 },
+  { label: "16:9", width: 1024, height: 576 },
+  { label: "9:16", width: 576, height: 1024 },
+  { label: "4:3", width: 1024, height: 768 },
+  { label: "3:4", width: 768, height: 1024 },
+];
 
 interface ChatComposerProps {
   onSend?: (text: string) => void;
-  onSendImage?: (prompt: string, size: "small" | "large") => void;
+  onSendImage?: (prompt: string, width: number, height: number) => void;
   onStop?: () => void;
   disabled?: boolean;
   streaming?: boolean;
@@ -21,15 +36,19 @@ export function ChatComposer({
   streaming = false,
 }: ChatComposerProps) {
   const [value, setValue] = useState("");
-  const [imageMode, setImageMode] = useState(false);
-  const [imageSize, setImageSize] = useState<"small" | "large">("small");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { imageMode, imageWidth, imageHeight, toggleImageMode, setImageDimensions } =
+    useChatStore();
+
+  const activePreset =
+    IMAGE_PRESETS.find((p) => p.width === imageWidth && p.height === imageHeight) ??
+    IMAGE_PRESETS[0];
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
     if (imageMode) {
-      onSendImage?.(trimmed, imageSize);
+      onSendImage?.(trimmed, imageWidth, imageHeight);
     } else {
       onSend?.(trimmed);
     }
@@ -37,7 +56,7 @@ export function ChatComposer({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, onSend, onSendImage, imageMode, imageSize, disabled]);
+  }, [value, onSend, onSendImage, imageMode, imageWidth, imageHeight, disabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -56,6 +75,16 @@ export function ChatComposer({
   return (
     <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm">
       <div className="max-w-2xl mx-auto px-4 py-3">
+        {/* Image mode indicator pill */}
+        {imageMode && (
+          <div className="mb-2 flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 bg-accent/10 text-accent rounded-full px-2.5 py-0.5 text-xs font-medium">
+              <ImageIcon className="w-3 h-3" />
+              Image mode
+            </span>
+          </div>
+        )}
+
         {/* Model selector - only shown in text mode */}
         {!imageMode && (
           <div className="mb-2">
@@ -67,14 +96,16 @@ export function ChatComposer({
         <div
           className={cn(
             "flex items-end gap-2 rounded-xl border",
-            imageMode ? "border-accent/40" : "border-border",
+            imageMode
+              ? "border-accent/40 shadow-[0_0_0_1px_rgba(99,102,241,0.15),0_0_12px_rgba(99,102,241,0.06)]"
+              : "border-border",
             "bg-surface px-3 py-2.5",
-            "focus-within:border-accent/50 transition-colors"
+            "focus-within:border-accent/50 transition-all duration-200"
           )}
         >
           <button
             type="button"
-            onClick={() => setImageMode((m) => !m)}
+            onClick={toggleImageMode}
             disabled={disabled}
             className={cn(
               "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
@@ -139,36 +170,25 @@ export function ChatComposer({
         {imageMode ? (
           <div className="mt-2">
             <div className="flex items-center justify-center gap-1">
-              <button
-                type="button"
-                onClick={() => setImageSize("small")}
-                disabled={disabled}
-                className={cn(
-                  "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
-                  imageSize === "small"
-                    ? "bg-accent/15 text-accent"
-                    : "text-text-secondary hover:text-text-primary"
-                )}
-              >
-                512
-              </button>
-              <span className="text-text-secondary/40 text-xs">·</span>
-              <button
-                type="button"
-                onClick={() => setImageSize("large")}
-                disabled={disabled}
-                className={cn(
-                  "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
-                  imageSize === "large"
-                    ? "bg-accent/15 text-accent"
-                    : "text-text-secondary hover:text-text-primary"
-                )}
-              >
-                1024
-              </button>
+              {IMAGE_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setImageDimensions(preset.width, preset.height)}
+                  disabled={disabled}
+                  className={cn(
+                    "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                    activePreset.label === preset.label
+                      ? "bg-accent/15 text-accent"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
             <p className="text-center text-xs text-text-secondary mt-1.5">
-              Generating via ComfyUI
+              {activePreset.width}×{activePreset.height} · ComfyUI
             </p>
           </div>
         ) : (
