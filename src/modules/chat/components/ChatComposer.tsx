@@ -7,7 +7,7 @@ import { ModelSelector } from "@/modules/chat/components/ModelSelector";
 
 interface ChatComposerProps {
   onSend?: (text: string) => void;
-  onSendImage?: (prompt: string) => void;
+  onSendImage?: (prompt: string, size: "small" | "large") => void;
   disabled?: boolean;
 }
 
@@ -18,13 +18,14 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const [value, setValue] = useState("");
   const [imageMode, setImageMode] = useState(false);
+  const [imageSize, setImageSize] = useState<"small" | "large">("small");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
     if (imageMode) {
-      onSendImage?.(trimmed);
+      onSendImage?.(trimmed, imageSize);
     } else {
       onSend?.(trimmed);
     }
@@ -32,7 +33,7 @@ export function ChatComposer({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, onSend, onSendImage, imageMode, disabled]);
+  }, [value, onSend, onSendImage, imageMode, imageSize, disabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -113,9 +114,41 @@ export function ChatComposer({
           </button>
         </div>
 
-        <p className="text-center text-xs text-text-secondary mt-2">
-          {imageMode ? "Generating via ComfyUI" : "Shift + Enter for new line"}
-        </p>
+        {imageMode ? (
+          <div className="flex items-center justify-center gap-1 mt-2">
+            <button
+              type="button"
+              onClick={() => setImageSize("small")}
+              disabled={disabled}
+              className={cn(
+                "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                imageSize === "small"
+                  ? "bg-accent/15 text-accent"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              512
+            </button>
+            <span className="text-text-secondary/40 text-xs">·</span>
+            <button
+              type="button"
+              onClick={() => setImageSize("large")}
+              disabled={disabled}
+              className={cn(
+                "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                imageSize === "large"
+                  ? "bg-accent/15 text-accent"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              1024
+            </button>
+          </div>
+        ) : (
+          <p className="text-center text-xs text-text-secondary mt-2">
+            Shift + Enter for new line
+          </p>
+        )}
       </div>
     </div>
   );

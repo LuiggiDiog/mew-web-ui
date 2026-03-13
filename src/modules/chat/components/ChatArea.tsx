@@ -204,7 +204,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   );
 
   const handleSendImage = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, size: "small" | "large" = "small") => {
       if (streaming) return;
 
       const userMsg: Message = {
@@ -235,7 +235,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, conversationId }),
+          body: JSON.stringify({ prompt, conversationId, size }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);

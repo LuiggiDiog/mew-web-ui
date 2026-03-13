@@ -98,7 +98,7 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
   );
 
   const handleSendImage = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, size: "small" | "large" = "small") => {
       if (streaming) return;
 
       const tempConvId = "new";
@@ -129,7 +129,7 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, size }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);

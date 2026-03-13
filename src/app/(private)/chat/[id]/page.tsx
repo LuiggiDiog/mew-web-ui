@@ -39,6 +39,7 @@ export default async function ConversationPage({
     content: m.content,
     createdAt: m.createdAt.toISOString(),
     model: m.model ?? undefined,
+    type: (m.type as "text" | "image") ?? undefined,
   }));
 
   return (

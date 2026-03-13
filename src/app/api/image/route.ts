@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, conversationId } = body as {
+  const { prompt, conversationId, size } = body as {
     prompt?: string;
     conversationId?: string;
+    size?: string;
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 
   let imageBuffer: Buffer;
   try {
-    imageBuffer = await comfyClient.generate(prompt);
+    imageBuffer = await comfyClient.generate(prompt, size === "large" ? "large" : "small");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("timed out")) {
