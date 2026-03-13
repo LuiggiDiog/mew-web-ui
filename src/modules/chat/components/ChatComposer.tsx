@@ -51,10 +51,12 @@ export function ChatComposer({
   return (
     <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm">
       <div className="max-w-2xl mx-auto px-4 py-3">
-        {/* Model selector row */}
-        <div className="mb-2">
-          <ModelSelector />
-        </div>
+        {/* Model selector — only shown in text mode */}
+        {!imageMode && (
+          <div className="mb-2">
+            <ModelSelector />
+          </div>
+        )}
 
         {/* Input row */}
         <div

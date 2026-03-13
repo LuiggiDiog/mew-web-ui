@@ -235,7 +235,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, model: activeModel, conversationId }),
+          body: JSON.stringify({ prompt, conversationId }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);

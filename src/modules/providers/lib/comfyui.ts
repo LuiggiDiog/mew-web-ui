@@ -13,7 +13,7 @@ export class ComfyUIClient {
 
   async isConnected(): Promise<boolean> {
     try {
-      const res = await fetch(`${this.baseUrl}/object_info/CheckpointLoaderSimple`);
+      const res = await fetch(`${this.baseUrl}/object_info/UNETLoader`);
       return res.ok;
     } catch {
       return false;
@@ -21,17 +21,17 @@ export class ComfyUIClient {
   }
 
   async listModels(): Promise<ComfyModel[]> {
-    const res = await fetch(`${this.baseUrl}/object_info/CheckpointLoaderSimple`);
+    const res = await fetch(`${this.baseUrl}/object_info/UNETLoader`);
     if (!res.ok) throw new Error(`ComfyUI returned ${res.status}`);
     const data = await res.json();
     const names: string[] =
-      data?.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0] ?? [];
+      data?.UNETLoader?.input?.required?.unet_name?.[0] ?? [];
     return names.map((name) => ({ name }));
   }
 
-  async generate(prompt: string, model: string): Promise<Buffer> {
+  async generate(prompt: string): Promise<Buffer> {
     const clientId = crypto.randomUUID();
-    const workflow = this.buildWorkflow(prompt, model);
+    const workflow = this.buildWorkflow(prompt);
 
     const submitRes = await fetch(`${this.baseUrl}/prompt`, {
       method: "POST",
@@ -82,46 +82,85 @@ export class ComfyUIClient {
     return Buffer.from(arrayBuffer);
   }
 
-  private buildWorkflow(prompt: string, model: string): object {
+  // Z-Image Turbo workflow (matches z_image_turbo_example)
+  // Models: z_image_turbo_nvfp4.safetensors (UNET) + qwen_3_4b_fp4_mixed.safetensors (CLIP) + ae.safetensors (VAE)
+  private buildWorkflow(prompt: string): object {
     return {
-      "3": {
-        class_type: "KSampler",
+      // UNET model loader
+      "16": {
+        class_type: "UNETLoader",
         inputs: {
-          model: ["4", 0],
-          positive: ["6", 0],
-          negative: ["7", 0],
-          latent_image: ["5", 0],
-          seed: Math.floor(Math.random() * 2 ** 32),
-          steps: 20,
-          cfg: 7.0,
-          sampler_name: "euler",
-          scheduler: "karras",
-          denoise: 1.0,
+          unet_name: process.env.COMFYUI_UNET_MODEL ?? "z_image_turbo_nvfp4.safetensors",
+          weight_dtype: "default",
         },
       },
-      "4": {
-        class_type: "CheckpointLoaderSimple",
-        inputs: { ckpt_name: model },
+      // CLIP / text encoder (Qwen 3 4B)
+      "18": {
+        class_type: "CLIPLoader",
+        inputs: {
+          clip_name: process.env.COMFYUI_CLIP_MODEL ?? "qwen_3_4b_fp4_mixed.safetensors",
+          type: "lumina2",
+          device: "default",
+        },
       },
-      "5": {
-        class_type: "EmptyLatentImage",
-        inputs: { width: 512, height: 512, batch_size: 1 },
+      // VAE
+      "17": {
+        class_type: "VAELoader",
+        inputs: {
+          vae_name: process.env.COMFYUI_VAE_MODEL ?? "ae.safetensors",
+        },
       },
+      // AuraFlow-compatible sampling shift
+      "11": {
+        class_type: "ModelSamplingAuraFlow",
+        inputs: {
+          model: ["16", 0],
+          shift: 3,
+        },
+      },
+      // Positive prompt
       "6": {
         class_type: "CLIPTextEncode",
-        inputs: { clip: ["4", 1], text: prompt },
+        inputs: {
+          clip: ["18", 0],
+          text: prompt,
+        },
       },
+      // Negative prompt
       "7": {
         class_type: "CLIPTextEncode",
         inputs: {
-          clip: ["4", 1],
-          text: "nsfw, blurry, bad anatomy, watermark, low quality",
+          clip: ["18", 0],
+          text: "blurry ugly bad",
         },
       },
+      // Latent image (1024x1024 to match z-image native resolution)
+      "13": {
+        class_type: "EmptySD3LatentImage",
+        inputs: { width: 1024, height: 1024, batch_size: 1 },
+      },
+      // Sampler (9 steps, euler/simple as in original)
+      "3": {
+        class_type: "KSampler",
+        inputs: {
+          model: ["11", 0],
+          positive: ["6", 0],
+          negative: ["7", 0],
+          latent_image: ["13", 0],
+          seed: Math.floor(Math.random() * 2 ** 32),
+          steps: 9,
+          cfg: 1,
+          sampler_name: "euler",
+          scheduler: "simple",
+          denoise: 1.0,
+        },
+      },
+      // Decode
       "8": {
         class_type: "VAEDecode",
-        inputs: { samples: ["3", 0], vae: ["4", 2] },
+        inputs: { samples: ["3", 0], vae: ["17", 0] },
       },
+      // Save
       "9": {
         class_type: "SaveImage",
         inputs: { filename_prefix: "mewui", images: ["8", 0] },

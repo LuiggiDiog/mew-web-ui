@@ -9,7 +9,7 @@ import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
 import { isUuid } from "@/modules/shared/utils/uuid";
 
 const MAX_PROMPT_LENGTH = 2_000;
-const MAX_MODEL_LENGTH = 200;
+const COMFYUI_MODEL_LABEL = "z-image-turbo";
 
 export async function POST(request: NextRequest) {
   const { session, error } = await getApiSession();
@@ -20,18 +20,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, model, conversationId } = body as {
+  const { prompt, conversationId } = body as {
     prompt?: string;
-    model?: string;
     conversationId?: string;
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
     return NextResponse.json({ error: "prompt is required" }, { status: 400 });
-  }
-
-  if (typeof model !== "string" || !model.trim()) {
-    return NextResponse.json({ error: "model is required" }, { status: 400 });
   }
 
   if (conversationId && !isUuid(conversationId)) {
@@ -44,13 +39,6 @@ export async function POST(request: NextRequest) {
   if (prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json(
       { error: `prompt exceeds max length (${MAX_PROMPT_LENGTH})` },
-      { status: 400 }
-    );
-  }
-
-  if (model.length > MAX_MODEL_LENGTH) {
-    return NextResponse.json(
-      { error: "model exceeds max length" },
       { status: 400 }
     );
   }
@@ -74,7 +62,12 @@ export async function POST(request: NextRequest) {
     const title = prompt.slice(0, 60);
     const [newConv] = await db
       .insert(conversations)
-      .values({ userId: session.userId, title, model, provider: "comfyui" })
+      .values({
+        userId: session.userId,
+        title,
+        model: COMFYUI_MODEL_LABEL,
+        provider: "comfyui",
+      })
       .returning();
     convId = newConv.id;
   }
@@ -87,17 +80,17 @@ export async function POST(request: NextRequest) {
     type: "text",
   });
 
-  // Generate image
+  // Generate image via ComfyUI
   const comfyClient = new ComfyUIClient(
     process.env.COMFYUI_BASE_URL ?? "http://192.168.1.202:8188"
   );
 
   let imageBuffer: Buffer;
   try {
-    imageBuffer = await comfyClient.generate(prompt, model);
+    imageBuffer = await comfyClient.generate(prompt);
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    if (message.includes("timed out")) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("timed out")) {
       return NextResponse.json({ error: "Image generation timed out" }, { status: 504 });
     }
     return NextResponse.json({ error: "ComfyUI unreachable" }, { status: 503 });
@@ -116,7 +109,7 @@ export async function POST(request: NextRequest) {
     conversationId: convId,
     role: "assistant",
     content: imageUrl,
-    model,
+    model: COMFYUI_MODEL_LABEL,
     type: "image",
   });
 
