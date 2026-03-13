@@ -108,7 +108,7 @@ beforeEach(() => {
   } as never);
   mockConvUpdate.mockResolvedValue([]);
 
-  mockComfyGenerate.mockResolvedValue(Buffer.from("png"));
+  mockComfyGenerate.mockResolvedValue({ buffer: Buffer.from("png"), seed: 42 });
   mockOllamaChat.mockReturnValue(fakeChatStream());
   mockWriteFile.mockResolvedValue(undefined);
   mockMkdir.mockResolvedValue(undefined);
@@ -186,12 +186,15 @@ describe("POST /api/image", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json).toEqual({
+    expect(json).toMatchObject({
       imageUrl: expect.stringMatching(/^\/generated\/.+\.png$/),
       conversationId: OWNED_CONV_ID,
+      seed: expect.any(Number),
+      fullWidth: 1024,
+      fullHeight: 1024,
     });
 
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a cat on a sofa", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("a cat on a sofa", 1024, 1024, undefined);
     expect(mockWriteFile).toHaveBeenCalledWith(expect.stringContaining("generated"), expect.any(Buffer));
 
     expect(mockInsertValues).toHaveBeenCalledWith(
@@ -245,7 +248,7 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 576);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 576, undefined);
   });
 
   it("uses default 1024×1024 when dimensions are omitted", async () => {
@@ -256,7 +259,7 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024, undefined);
   });
 
   it("uses default 1024×1024 when dimensions are out of range", async () => {
@@ -267,7 +270,7 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024, undefined);
   });
 
   it("returns 504 on ComfyUI timeout", async () => {
@@ -322,7 +325,7 @@ describe("POST /api/image", () => {
       "llama3.2"
     );
 
-    expect(mockComfyGenerate).toHaveBeenCalledWith("enhanced final prompt", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("enhanced final prompt", 1024, 1024, undefined);
   });
 
   it("does not call Ollama when enhancePrompt is missing", async () => {
@@ -337,7 +340,7 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).not.toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
   });
 
   it("does not call Ollama when enhancePrompt is false", async () => {
@@ -352,7 +355,7 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).not.toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
   });
 
   it("falls back to original prompt if Ollama enhancement fails", async () => {
@@ -374,6 +377,6 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024);
+    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
   });
 });

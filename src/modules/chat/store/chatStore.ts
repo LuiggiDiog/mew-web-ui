@@ -13,6 +13,7 @@ interface ChatState {
   imageMode: boolean;
   imageWidth: number;
   imageHeight: number;
+  previewMode: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
@@ -22,6 +23,7 @@ interface ChatState {
   setStreamingMessageId: (id: string | null) => void;
   toggleImageMode: () => void;
   setImageDimensions: (width: number, height: number) => void;
+  togglePreviewMode: () => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -33,6 +35,7 @@ export const useChatStore = create<ChatState>((set) => ({
   imageMode: false,
   imageWidth: 1024,
   imageHeight: 1024,
+  previewMode: false,
   openDrawer: () => set({ drawerOpen: true }),
   closeDrawer: () => set({ drawerOpen: false }),
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
@@ -42,4 +45,5 @@ export const useChatStore = create<ChatState>((set) => ({
   setStreamingMessageId: (id) => set({ streamingMessageId: id }),
   toggleImageMode: () => set((s) => ({ imageMode: !s.imageMode })),
   setImageDimensions: (width, height) => set({ imageWidth: width, imageHeight: height }),
+  togglePreviewMode: () => set((s) => ({ previewMode: !s.previewMode })),
 }));

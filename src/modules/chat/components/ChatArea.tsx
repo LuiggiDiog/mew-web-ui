@@ -52,7 +52,7 @@ async function readStream(
 
 export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   const router = useRouter();
-  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight } =
+  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight, previewMode } =
     useChatStore();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [streaming, setStreaming] = useState(false);
@@ -276,7 +276,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
-          body: JSON.stringify({ prompt, conversationId, width, height, chatHistory }),
+          body: JSON.stringify({ prompt, conversationId, width, height, chatHistory, preview: previewMode }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
@@ -303,7 +303,70 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
         setStreamingMessageId(null);
       }
     },
-    [conversationId, activeModel, streaming, router, setStreamingMessageId, messages, imageWidth, imageHeight]
+    [conversationId, activeModel, streaming, router, setStreamingMessageId, messages, imageWidth, imageHeight, previewMode]
+  );
+
+  const handleUpscale = useCallback(
+    async (messageId: string, seed: number, fullWidth: number, fullHeight: number) => {
+      if (streaming) return;
+
+      const msgIndex = messages.findIndex((m) => m.id === messageId);
+      const precUserMsg = messages
+        .slice(0, msgIndex)
+        .reverse()
+        .find((m) => m.role === "user" && (!m.type || m.type === "text"));
+      if (!precUserMsg) return;
+
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content: "" } : m)));
+      setStreaming(true);
+      setStreamingMessageId(messageId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
+
+      try {
+        const chatHistory = messages
+          .slice(0, msgIndex)
+          .filter((m) => !(m.type === "image" && m.role === "assistant"))
+          .slice(-10)
+          .map((m) => ({ role: m.role, content: m.content }));
+
+        const res = await fetch("/api/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            prompt: precUserMsg.content,
+            conversationId,
+            width: fullWidth,
+            height: fullHeight,
+            seed,
+            chatHistory,
+            skipUserMessage: true,
+            replaceMessageId: messageId,
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
+        const { imageUrl } = await res.json();
+
+        setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content: imageUrl } : m)));
+        router.refresh();
+      } catch (error) {
+        if (isAbortError(error)) return;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, content: "Error: image generation failed.", type: "text" } : m
+          )
+        );
+      } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
+        setStreaming(false);
+        setStreamingMessageId(null);
+      }
+    },
+    [conversationId, messages, streaming, router, setStreamingMessageId]
   );
 
   return (
@@ -320,6 +383,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
               messages={messages}
               onRegenerate={handleRegenerate}
               onEdit={handleEdit}
+              onUpscale={handleUpscale}
               streaming={streaming}
             />
           ) : (

@@ -57,6 +57,7 @@ beforeEach(() => {
     imageMode: false,
     imageWidth: 1024,
     imageHeight: 1024,
+    previewMode: false,
   });
 });
 
@@ -214,7 +215,7 @@ describe("NewChatArea image generation", () => {
         "/api/image",
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ prompt: "a cat", width: 1024, height: 1024 }),
+          body: JSON.stringify({ prompt: "a cat", width: 1024, height: 1024, preview: false }),
         })
       );
     });

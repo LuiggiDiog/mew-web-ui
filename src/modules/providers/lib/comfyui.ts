@@ -31,9 +31,15 @@ export class ComfyUIClient {
     return names.map((name) => ({ name }));
   }
 
-  async generate(prompt: string, width: number = 1024, height: number = 1024): Promise<Buffer> {
+  async generate(
+    prompt: string,
+    width: number = 1024,
+    height: number = 1024,
+    seed?: number,
+  ): Promise<{ buffer: Buffer; seed: number }> {
+    const usedSeed = seed ?? Math.floor(Math.random() * 2 ** 32);
     const clientId = crypto.randomUUID();
-    const workflow = this.buildWorkflow(prompt, width, height);
+    const workflow = this.buildWorkflow(prompt, width, height, usedSeed);
 
     const submitRes = await fetch(`${this.baseUrl}/prompt`, {
       method: "POST",
@@ -44,7 +50,8 @@ export class ComfyUIClient {
     const { prompt_id } = await submitRes.json();
 
     const image = await this.pollForResult(prompt_id);
-    return this.fetchImage(image.filename, image.subfolder, image.type);
+    const buffer = await this.fetchImage(image.filename, image.subfolder, image.type);
+    return { buffer, seed: usedSeed };
   }
 
   private async pollForResult(promptId: string): Promise<ComfyOutputImage> {
@@ -86,7 +93,7 @@ export class ComfyUIClient {
 
   // Z-Image Turbo workflow (matches z_image_turbo_example)
   // Models: z_image_turbo_nvfp4.safetensors (UNET) + qwen_3_4b_fp4_mixed.safetensors (CLIP) + ae.safetensors (VAE)
-  private buildWorkflow(prompt: string, width: number = 1024, height: number = 1024): object {
+  private buildWorkflow(prompt: string, width: number = 1024, height: number = 1024, seed: number = 0): object {
     return {
       // UNET model loader
       "16": {
@@ -149,7 +156,7 @@ export class ComfyUIClient {
           positive: ["6", 0],
           negative: ["7", 0],
           latent_image: ["13", 0],
-          seed: Math.floor(Math.random() * 2 ** 32),
+          seed,
           steps: 9,
           cfg: 1,
           sampler_name: "euler",

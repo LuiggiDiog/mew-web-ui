@@ -75,6 +75,7 @@ beforeEach(() => {
     imageMode: false,
     imageWidth: 1024,
     imageHeight: 1024,
+    previewMode: false,
   });
 });
 
@@ -397,7 +398,7 @@ describe("ChatArea image generation", () => {
         "/api/image",
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ prompt: "a cat", conversationId: "conv-1", width: 1024, height: 1024, chatHistory: [] }),
+          body: JSON.stringify({ prompt: "a cat", conversationId: "conv-1", width: 1024, height: 1024, chatHistory: [], preview: false }),
         })
       );
     });

@@ -37,12 +37,15 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { imageMode, imageWidth, imageHeight, toggleImageMode, setImageDimensions } =
+  const { imageMode, imageWidth, imageHeight, toggleImageMode, setImageDimensions, previewMode, togglePreviewMode } =
     useChatStore();
 
   const activePreset =
     IMAGE_PRESETS.find((p) => p.width === imageWidth && p.height === imageHeight) ??
     IMAGE_PRESETS[0];
+
+  const previewWidth = Math.max(256, Math.round(activePreset.width / 2 / 8) * 8);
+  const previewHeight = Math.max(256, Math.round(activePreset.height / 2 / 8) * 8);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
@@ -186,9 +189,27 @@ export function ChatComposer({
                   {preset.label}
                 </button>
               ))}
+              <span className="w-px h-3 bg-border/50 mx-1" />
+              <button
+                type="button"
+                onClick={togglePreviewMode}
+                disabled={disabled}
+                title={previewMode ? "Draft mode on — generates at half resolution" : "Enable draft mode for faster preview"}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                  previewMode
+                    ? "bg-amber-500/15 text-amber-400"
+                    : "text-text-secondary hover:text-text-primary",
+                  disabled && "opacity-40 cursor-not-allowed"
+                )}
+              >
+                ⚡ Draft
+              </button>
             </div>
             <p className="text-center text-xs text-text-secondary mt-1.5">
-              {activePreset.width}×{activePreset.height} · ComfyUI
+              {previewMode
+                ? `${previewWidth}×${previewHeight} preview → ${activePreset.width}×${activePreset.height} · ComfyUI`
+                : `${activePreset.width}×${activePreset.height} · ComfyUI`}
             </p>
           </div>
         ) : (

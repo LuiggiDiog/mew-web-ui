@@ -8,12 +8,34 @@ import { ImageGeneratingPlaceholder } from "@/modules/chat/components/ImageGener
 import { ImageLightbox } from "@/modules/chat/components/ImageLightbox";
 import type { Message } from "@/modules/chat/types";
 
+interface PreviewParams {
+  seed: number;
+  fullWidth: number;
+  fullHeight: number;
+}
+
+function parsePreviewParams(url: string): PreviewParams | null {
+  try {
+    const params = new URL(url, "http://x").searchParams;
+    const s = params.get("s");
+    const fw = params.get("fw");
+    const fh = params.get("fh");
+    if (s && fw && fh) {
+      return { seed: Number(s), fullWidth: Number(fw), fullHeight: Number(fh) };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 interface MessageBubbleProps {
   message: Message;
   showRegenerateAction?: boolean;
   showEditAction?: boolean;
   onRegenerate?: () => void;
   onEdit?: (messageId: string, content: string) => void;
+  onUpscale?: (seed: number, fullWidth: number, fullHeight: number) => void;
   actionsDisabled?: boolean;
 }
 
@@ -30,6 +52,7 @@ export function MessageBubble({
   showEditAction = false,
   onRegenerate,
   onEdit,
+  onUpscale,
   actionsDisabled = false,
 }: MessageBubbleProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -103,17 +126,30 @@ export function MessageBubble({
               <button
                 type="button"
                 onClick={() => setLightboxOpen(true)}
-                className="cursor-zoom-in group relative block outline-none"
+                className="cursor-zoom-in relative block outline-none"
                 aria-label="View full image"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={message.content}
                   alt="Generated image"
-                  className="rounded-2xl max-w-full transition-transform duration-200 group-hover:scale-[1.02]"
+                  className="rounded-2xl max-w-full"
                   loading="lazy"
                 />
               </button>
+              {(() => {
+                const preview = parsePreviewParams(message.content);
+                return preview && onUpscale ? (
+                  <button
+                    type="button"
+                    onClick={() => onUpscale(preview.seed, preview.fullWidth, preview.fullHeight)}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors outline-none"
+                    title={`Generate full-size ${preview.fullWidth}×${preview.fullHeight} version`}
+                  >
+                    ↑ Full size ({preview.fullWidth}×{preview.fullHeight})
+                  </button>
+                ) : null;
+              })()}
               {lightboxOpen && (
                 <ImageLightbox
                   src={message.content}

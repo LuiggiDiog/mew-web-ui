@@ -17,7 +17,7 @@ beforeEach(() => {
       json: () => Promise.resolve(null),
     })
   );
-  useChatStore.setState({ imageMode: false, imageWidth: 1024, imageHeight: 1024 });
+  useChatStore.setState({ imageMode: false, imageWidth: 1024, imageHeight: 1024, previewMode: false });
 });
 
 describe("ChatComposer", () => {

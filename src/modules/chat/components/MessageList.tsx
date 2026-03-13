@@ -8,10 +8,11 @@ interface MessageListProps {
   messages: Message[];
   onRegenerate?: () => void;
   onEdit?: (messageId: string, content: string) => void;
+  onUpscale?: (messageId: string, seed: number, fullWidth: number, fullHeight: number) => void;
   streaming?: boolean;
 }
 
-export function MessageList({ messages, onRegenerate, onEdit, streaming }: MessageListProps) {
+export function MessageList({ messages, onRegenerate, onEdit, onUpscale, streaming }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLength = useRef<number>(messages.length);
 
@@ -46,6 +47,7 @@ export function MessageList({ messages, onRegenerate, onEdit, streaming }: Messa
           showEditAction={message.id === lastUserId}
           onRegenerate={onRegenerate}
           onEdit={onEdit}
+          onUpscale={onUpscale ? (s, fw, fh) => onUpscale(message.id, s, fw, fh) : undefined}
           actionsDisabled={streaming}
         />
       ))}

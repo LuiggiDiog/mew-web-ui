@@ -18,7 +18,7 @@ function isAbortError(error: unknown): boolean {
 
 export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
   const router = useRouter();
-  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight } =
+  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight, previewMode } =
     useChatStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -149,7 +149,7 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
-          body: JSON.stringify({ prompt, width, height }),
+          body: JSON.stringify({ prompt, width, height, preview: previewMode }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
@@ -179,7 +179,7 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
         setStreamingMessageId(null);
       }
     },
-    [activeModel, streaming, router, setStreamingMessageId, imageWidth, imageHeight]
+    [activeModel, streaming, router, setStreamingMessageId, imageWidth, imageHeight, previewMode]
   );
 
   return (

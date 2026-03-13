@@ -115,7 +115,9 @@ describe("ComfyUIClient.generate", () => {
 
     await vi.advanceTimersByTimeAsync(1_000);
 
-    await expect(promise).resolves.toEqual(Buffer.from(imageArrayBuffer));
+    const result = await promise;
+    expect(result.buffer).toEqual(Buffer.from(imageArrayBuffer));
+    expect(typeof result.seed).toBe("number");
 
     const submitCall = mockFetch.mock.calls[0];
     expect(submitCall[0]).toBe(`${BASE_URL}/prompt`);

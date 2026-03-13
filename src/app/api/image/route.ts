@@ -93,12 +93,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, conversationId, width, height, chatHistory } = body as {
+  const { prompt, conversationId, width, height, chatHistory, seed, preview, skipUserMessage, replaceMessageId } = body as {
     prompt?: string;
     conversationId?: string;
     width?: number;
     height?: number;
     chatHistory?: { role: string; content: string }[];
+    seed?: number;
+    preview?: boolean;
+    skipUserMessage?: boolean;
+    replaceMessageId?: string;
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
@@ -153,12 +157,14 @@ export async function POST(request: NextRequest) {
     convId = newConv.id;
   }
 
-  await db.insert(messages).values({
-    conversationId: convId,
-    role: "user",
-    content: inputPrompt,
-    type: "text",
-  });
+  if (!skipUserMessage) {
+    await db.insert(messages).values({
+      conversationId: convId,
+      role: "user",
+      content: inputPrompt,
+      type: "text",
+    });
+  }
 
   let finalPrompt = inputPrompt;
 
@@ -215,12 +221,20 @@ export async function POST(request: NextRequest) {
 
   const comfyClient = new ComfyUIClient(env.comfyuiBaseUrl);
 
+  const imgWidth = typeof width === "number" && width >= 512 && width <= 2048 ? width : 1024;
+  const imgHeight = typeof height === "number" && height >= 512 && height <= 2048 ? height : 1024;
+
+  // Preview mode: generate at ~50% resolution for speed, rounded to nearest 8
+  const actualWidth = preview ? Math.max(256, Math.round(imgWidth / 2 / 8) * 8) : imgWidth;
+  const actualHeight = preview ? Math.max(256, Math.round(imgHeight / 2 / 8) * 8) : imgHeight;
+
+  const inputSeed = typeof seed === "number" && seed >= 0 ? Math.floor(seed) : undefined;
+
   let imageBuffer: Buffer;
+  let usedSeed: number;
 
   try {
-    const imgWidth = typeof width === "number" && width >= 512 && width <= 2048 ? width : 1024;
-    const imgHeight = typeof height === "number" && height >= 512 && height <= 2048 ? height : 1024;
-    imageBuffer = await comfyClient.generate(finalPrompt, imgWidth, imgHeight);
+    ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate(finalPrompt, actualWidth, actualHeight, inputSeed));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
 
@@ -241,15 +255,25 @@ export async function POST(request: NextRequest) {
   await mkdir(generatedDir, { recursive: true });
   await writeFile(path.join(generatedDir, filename), imageBuffer);
 
-  const imageUrl = `/generated/${filename}`;
+  // Encode seed + full dimensions into URL so the frontend can offer an upscale action
+  const imageUrl = preview
+    ? `/generated/${filename}?s=${usedSeed}&fw=${imgWidth}&fh=${imgHeight}`
+    : `/generated/${filename}`;
 
-  await db.insert(messages).values({
-    conversationId: convId,
-    role: "assistant",
-    content: imageUrl,
-    model: COMFYUI_MODEL_LABEL,
-    type: "image",
-  });
+  if (replaceMessageId && isUuid(replaceMessageId)) {
+    await db
+      .update(messages)
+      .set({ content: imageUrl })
+      .where(and(eq(messages.id, replaceMessageId), eq(messages.conversationId, convId!)));
+  } else {
+    await db.insert(messages).values({
+      conversationId: convId,
+      role: "assistant",
+      content: imageUrl,
+      model: COMFYUI_MODEL_LABEL,
+      type: "image",
+    });
+  }
 
   await db
     .update(conversations)
@@ -261,5 +285,5 @@ export async function POST(request: NextRequest) {
       ),
     );
 
-  return NextResponse.json({ imageUrl, conversationId: convId });
+  return NextResponse.json({ imageUrl, conversationId: convId, seed: usedSeed, fullWidth: imgWidth, fullHeight: imgHeight });
 }
