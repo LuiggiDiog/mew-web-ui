@@ -237,14 +237,18 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   );
 
   const handleSendImage = useCallback(
-    async (prompt: string, width: number = imageWidth, height: number = imageHeight) => {
+    async (prompt: string, width: number = imageWidth, height: number = imageHeight, referenceImage?: string, denoise?: number) => {
       if (streaming) return;
+
+      const userContent = referenceImage
+        ? `[[ref:${referenceImage}]]${prompt}`
+        : prompt;
 
       const userMsg: Message = {
         id: `optimistic-user-img-${Date.now()}`,
         conversationId,
         role: "user",
-        content: prompt,
+        content: userContent,
         type: "text",
         createdAt: new Date().toISOString(),
       };
@@ -276,7 +280,10 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
-          body: JSON.stringify({ prompt, conversationId, width, height, chatHistory, preview: previewMode }),
+          body: JSON.stringify({
+            prompt, conversationId, width, height, chatHistory, preview: previewMode,
+            ...(referenceImage ? { referenceImage, denoise } : {}),
+          }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, conversationId, width, height, chatHistory, seed, preview, skipUserMessage, replaceMessageId } = body as {
+  const { prompt, conversationId, width, height, chatHistory, seed, preview, skipUserMessage, replaceMessageId, referenceImage, denoise } = body as {
     prompt?: string;
     conversationId?: string;
     width?: number;
@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
     preview?: boolean;
     skipUserMessage?: boolean;
     replaceMessageId?: string;
+    referenceImage?: string;
+    denoise?: number;
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
@@ -130,6 +132,17 @@ export async function POST(request: NextRequest) {
       { error: `prompt exceeds max length (${MAX_PROMPT_LENGTH})` },
       { status: 400 },
     );
+  }
+
+  if (referenceImage !== undefined) {
+    if (typeof referenceImage !== "string" || !referenceImage.startsWith("data:image/")) {
+      return NextResponse.json({ error: "referenceImage must be a valid image data URL" }, { status: 400 });
+    }
+    const base64Part = referenceImage.split(",")[1] ?? "";
+    const estimatedBytes = Math.ceil((base64Part.length * 3) / 4);
+    if (estimatedBytes > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "referenceImage exceeds 10MB limit" }, { status: 400 });
+    }
   }
 
   let convId = conversationId;
@@ -153,10 +166,24 @@ export async function POST(request: NextRequest) {
   }
 
   if (!skipUserMessage) {
+    let userContent = inputPrompt;
+
+    // Save reference image to disk and embed URL in user message
+    if (referenceImage) {
+      const base64Data = referenceImage.split(",")[1];
+      const refBuffer = Buffer.from(base64Data, "base64");
+      const refId = crypto.randomUUID();
+      const refFilename = `ref_${refId}.png`;
+      const generatedDir = path.join(process.cwd(), "public", "generated");
+      await mkdir(generatedDir, { recursive: true });
+      await writeFile(path.join(generatedDir, refFilename), refBuffer);
+      userContent = `[[ref:/generated/${refFilename}]]${inputPrompt}`;
+    }
+
     await createMessage({
       conversationId: convId,
       role: "user",
-      content: inputPrompt,
+      content: userContent,
       type: "text",
     });
   }
@@ -222,7 +249,16 @@ export async function POST(request: NextRequest) {
   let usedSeed: number;
 
   try {
-    ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate(finalPrompt, actualWidth, actualHeight, inputSeed));
+    if (referenceImage) {
+      const base64Data = referenceImage.split(",")[1];
+      const refBuffer = Buffer.from(base64Data, "base64");
+      const validDenoise = typeof denoise === "number" ? Math.max(0.1, Math.min(1.0, denoise)) : 0.65;
+      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generateImg2Img(
+        finalPrompt, refBuffer, actualWidth, actualHeight, inputSeed, validDenoise,
+      ));
+    } else {
+      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate(finalPrompt, actualWidth, actualHeight, inputSeed));
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
 

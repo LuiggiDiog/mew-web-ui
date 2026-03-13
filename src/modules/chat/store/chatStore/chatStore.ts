@@ -14,6 +14,9 @@ export interface ChatState {
   imageWidth: number;
   imageHeight: number;
   previewMode: boolean;
+  referenceImage: string | null;
+  referenceImageName: string | null;
+  imageDenoise: number;
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
@@ -24,6 +27,9 @@ export interface ChatState {
   toggleImageMode: () => void;
   setImageDimensions: (width: number, height: number) => void;
   togglePreviewMode: () => void;
+  setReferenceImage: (dataUrl: string | null, name: string | null) => void;
+  setImageDenoise: (value: number) => void;
+  clearReferenceImage: () => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -36,6 +42,9 @@ export const useChatStore = create<ChatState>((set) => ({
   imageWidth: 1024,
   imageHeight: 1024,
   previewMode: false,
+  referenceImage: null,
+  referenceImageName: null,
+  imageDenoise: 0.65,
   openDrawer: () => set({ drawerOpen: true }),
   closeDrawer: () => set({ drawerOpen: false }),
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
@@ -43,7 +52,13 @@ export const useChatStore = create<ChatState>((set) => ({
   setModel: (model) => set({ activeModel: model }),
   setProvider: (provider) => set({ activeProvider: provider }),
   setStreamingMessageId: (id) => set({ streamingMessageId: id }),
-  toggleImageMode: () => set((s) => ({ imageMode: !s.imageMode })),
+  toggleImageMode: () => set((s) => ({
+    imageMode: !s.imageMode,
+    ...(s.imageMode ? { referenceImage: null, referenceImageName: null } : {}),
+  })),
   setImageDimensions: (width, height) => set({ imageWidth: width, imageHeight: height }),
   togglePreviewMode: () => set((s) => ({ previewMode: !s.previewMode })),
+  setReferenceImage: (dataUrl, name) => set({ referenceImage: dataUrl, referenceImageName: name }),
+  setImageDenoise: (value) => set({ imageDenoise: value }),
+  clearReferenceImage: () => set({ referenceImage: null, referenceImageName: null }),
 }));

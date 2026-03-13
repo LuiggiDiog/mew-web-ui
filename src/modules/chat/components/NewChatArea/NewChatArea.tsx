@@ -115,15 +115,19 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
   );
 
   const handleSendImage = useCallback(
-    async (prompt: string, width: number = imageWidth, height: number = imageHeight) => {
+    async (prompt: string, width: number = imageWidth, height: number = imageHeight, referenceImage?: string, denoise?: number) => {
       if (streaming) return;
 
       const tempConvId = "new";
+      const userContent = referenceImage
+        ? `[[ref:${referenceImage}]]${prompt}`
+        : prompt;
+
       const userMsg: Message = {
         id: `optimistic-user-img-${Date.now()}`,
         conversationId: tempConvId,
         role: "user",
-        content: prompt,
+        content: userContent,
         type: "text",
         createdAt: new Date().toISOString(),
       };
@@ -149,7 +153,10 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortController.signal,
-          body: JSON.stringify({ prompt, width, height, preview: previewMode }),
+          body: JSON.stringify({
+            prompt, width, height, preview: previewMode,
+            ...(referenceImage ? { referenceImage, denoise } : {}),
+          }),
         });
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);

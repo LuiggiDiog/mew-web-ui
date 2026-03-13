@@ -31,6 +31,21 @@ export class ComfyUIClient {
     return names.map((name) => ({ name }));
   }
 
+  async uploadImage(buffer: Buffer, filename: string): Promise<string> {
+    const formData = new FormData();
+    const blob = new Blob([buffer], { type: "image/png" });
+    formData.append("image", blob, filename);
+    formData.append("overwrite", "true");
+
+    const res = await fetch(`${this.baseUrl}/upload/image`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`ComfyUI image upload failed: ${res.status}`);
+    const data = await res.json();
+    return data.name as string;
+  }
+
   async generate(
     prompt: string,
     width: number = 1024,
@@ -40,6 +55,34 @@ export class ComfyUIClient {
     const usedSeed = seed ?? Math.floor(Math.random() * 2 ** 32);
     const clientId = crypto.randomUUID();
     const workflow = this.buildWorkflow(prompt, width, height, usedSeed);
+
+    const submitRes = await fetch(`${this.baseUrl}/prompt`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: workflow, client_id: clientId }),
+    });
+    if (!submitRes.ok) throw new Error(`ComfyUI prompt submission failed: ${submitRes.status}`);
+    const { prompt_id } = await submitRes.json();
+
+    const image = await this.pollForResult(prompt_id);
+    const buffer = await this.fetchImage(image.filename, image.subfolder, image.type);
+    return { buffer, seed: usedSeed };
+  }
+
+  async generateImg2Img(
+    prompt: string,
+    referenceImage: Buffer,
+    width: number = 1024,
+    height: number = 1024,
+    seed?: number,
+    denoise: number = 0.65,
+  ): Promise<{ buffer: Buffer; seed: number }> {
+    const usedSeed = seed ?? Math.floor(Math.random() * 2 ** 32);
+    const clientId = crypto.randomUUID();
+    const filename = `img2img_${crypto.randomUUID()}.png`;
+
+    const uploadedName = await this.uploadImage(referenceImage, filename);
+    const workflow = this.buildImg2ImgWorkflow(prompt, width, height, usedSeed, uploadedName, denoise);
 
     const submitRes = await fetch(`${this.baseUrl}/prompt`, {
       method: "POST",
@@ -162,6 +205,120 @@ export class ComfyUIClient {
           sampler_name: "euler",
           scheduler: "simple",
           denoise: 1.0,
+        },
+      },
+      // Decode
+      "8": {
+        class_type: "VAEDecode",
+        inputs: { samples: ["3", 0], vae: ["17", 0] },
+      },
+      // Save
+      "9": {
+        class_type: "SaveImage",
+        inputs: { filename_prefix: "mewui", images: ["8", 0] },
+      },
+    };
+  }
+
+  // Z-Image Turbo img2img workflow
+  // Same as text-to-image but replaces EmptySD3LatentImage with LoadImage + ImageScale + VAEEncode
+  private buildImg2ImgWorkflow(
+    prompt: string,
+    width: number = 1024,
+    height: number = 1024,
+    seed: number = 0,
+    referenceFilename: string,
+    denoise: number = 0.65,
+  ): object {
+    return {
+      // UNET model loader
+      "16": {
+        class_type: "UNETLoader",
+        inputs: {
+          unet_name: env.comfyuiUnetModel,
+          weight_dtype: "default",
+        },
+      },
+      // CLIP / text encoder (Qwen 3 4B)
+      "18": {
+        class_type: "CLIPLoader",
+        inputs: {
+          clip_name: env.comfyuiClipModel,
+          type: "lumina2",
+          device: "default",
+        },
+      },
+      // VAE
+      "17": {
+        class_type: "VAELoader",
+        inputs: {
+          vae_name: env.comfyuiVaeModel,
+        },
+      },
+      // AuraFlow-compatible sampling shift
+      "11": {
+        class_type: "ModelSamplingAuraFlow",
+        inputs: {
+          model: ["16", 0],
+          shift: 3,
+        },
+      },
+      // Positive prompt
+      "6": {
+        class_type: "CLIPTextEncode",
+        inputs: {
+          clip: ["18", 0],
+          text: prompt,
+        },
+      },
+      // Negative prompt
+      "7": {
+        class_type: "CLIPTextEncode",
+        inputs: {
+          clip: ["18", 0],
+          text: "blurry ugly bad",
+        },
+      },
+      // Load reference image
+      "20": {
+        class_type: "LoadImage",
+        inputs: {
+          image: referenceFilename,
+        },
+      },
+      // Resize reference image to target dimensions
+      "21": {
+        class_type: "ImageScale",
+        inputs: {
+          image: ["20", 0],
+          width,
+          height,
+          upscale_method: "lanczos",
+          crop: "center",
+        },
+      },
+      // Encode reference image to latent space
+      "22": {
+        class_type: "VAEEncode",
+        inputs: {
+          pixels: ["21", 0],
+          vae: ["17", 0],
+        },
+      },
+      // Sampler — denoise < 1.0 preserves reference image structure
+      "3": {
+        class_type: "KSampler",
+        inputs: {
+          model: ["11", 0],
+          positive: ["6", 0],
+          negative: ["7", 0],
+          latent_image: ["22", 0],
+          seed,
+          steps: 9,
+          cfg: 1,
+          sampler_name: "euler",
+          scheduler: "simple",
+          denoise,
         },
       },
       // Decode

@@ -1,17 +1,33 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
 import { Avatar } from "@/modules/shared/components/Avatar";
 import { Badge } from "@/modules/shared/components/Badge";
 import { EditableChatMessage } from "@/modules/chat/components/EditableChatMessage";
-import { RefreshIcon } from "@/modules/shared/components/icons";
+import { RefreshIcon, EditIcon } from "@/modules/shared/components/icons";
 import { ImageGeneratingPlaceholder } from "@/modules/chat/components/ImageGeneratingPlaceholder";
 import { ImageLightbox } from "@/modules/chat/components/ImageLightbox";
+import { useChatStore } from "@/modules/chat/store/chatStore";
 import type { Message } from "@/modules/chat/types";
 
 interface PreviewParams {
   seed: number;
   fullWidth: number;
   fullHeight: number;
+}
+
+interface ReferenceContent {
+  referenceUrl: string;
+  text: string;
+}
+
+function parseReferenceContent(content: string): ReferenceContent | null {
+  if (!content.startsWith("[[ref:")) return null;
+  const endIdx = content.indexOf("]]");
+  if (endIdx === -1) return null;
+  return {
+    referenceUrl: content.slice(6, endIdx),
+    text: content.slice(endIdx + 2).trim(),
+  };
 }
 
 function parsePreviewParams(url: string): PreviewParams | null {
@@ -60,11 +76,33 @@ export function MessageBubble({
   const isThinking = !isUser && message.content.trim().length === 0;
   const isImageMessage = message.type === "image";
 
+  const handleUseAsReference = useCallback(async () => {
+    if (!isImageMessage || !message.content) return;
+    try {
+      const res = await fetch(message.content);
+      const blob = await res.blob();
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const store = useChatStore.getState();
+        store.setReferenceImage(dataUrl, "Generated image");
+        if (!store.imageMode) {
+          store.toggleImageMode();
+        }
+      };
+      reader.readAsDataURL(blob);
+    } catch {
+      // ignore fetch errors
+    }
+  }, [isImageMessage, message.content]);
+
+  const refContent = isUser ? parseReferenceContent(message.content) : null;
+
   if (isUser) {
     return (
       <EditableChatMessage
         messageId={message.id}
-        content={message.content}
+        content={refContent ? refContent.text : message.content}
         showEditAction={showEditAction}
         actionsDisabled={actionsDisabled}
         onEdit={onEdit}
@@ -78,6 +116,18 @@ export function MessageBubble({
               className="mt-1 shrink-0"
             />
             <div className="flex flex-col gap-1 items-end">
+              {/* Reference image thumbnail */}
+              {refContent && !isEditing && (
+                <div className="rounded-2xl rounded-tr-sm overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={refContent.referenceUrl}
+                    alt="Reference image"
+                    className="max-w-48 max-h-48 object-cover rounded-2xl rounded-tr-sm"
+                    loading="lazy"
+                  />
+                </div>
+              )}
               <div
                 className={cn(
                   "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
@@ -137,19 +187,31 @@ export function MessageBubble({
                   loading="lazy"
                 />
               </button>
-              {(() => {
-                const preview = parsePreviewParams(message.content);
-                return preview && onUpscale ? (
-                  <button
-                    type="button"
-                    onClick={() => onUpscale(preview.seed, preview.fullWidth, preview.fullHeight)}
-                    className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors outline-none"
-                    title={`Generate full-size ${preview.fullWidth}×${preview.fullHeight} version`}
-                  >
-                    ↑ Full size ({preview.fullWidth}×{preview.fullHeight})
-                  </button>
-                ) : null;
-              })()}
+              <div className="flex items-center gap-3 mt-1.5">
+                {(() => {
+                  const preview = parsePreviewParams(message.content);
+                  return preview && onUpscale ? (
+                    <button
+                      type="button"
+                      onClick={() => onUpscale(preview.seed, preview.fullWidth, preview.fullHeight)}
+                      className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors outline-none"
+                      title={`Generate full-size ${preview.fullWidth}×${preview.fullHeight} version`}
+                    >
+                      ↑ Full size ({preview.fullWidth}×{preview.fullHeight})
+                    </button>
+                  ) : null;
+                })()}
+                <button
+                  type="button"
+                  onClick={handleUseAsReference}
+                  disabled={actionsDisabled}
+                  className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Use this image as reference for img2img"
+                >
+                  <EditIcon className="w-3 h-3" />
+                  Edit
+                </button>
+              </div>
               {lightboxOpen && (
                 <ImageLightbox
                   src={message.content}
