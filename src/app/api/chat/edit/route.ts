@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
         role: "assistant",
         content: assistantContent,
         model: editModel,
+        type: "text",
       });
 
       await db

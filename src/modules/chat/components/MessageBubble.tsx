@@ -95,11 +95,21 @@ export function MessageBubble({
       >
         <div
           className={cn(
-            "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
-            "bg-surface text-text-primary rounded-2xl border border-border/50 rounded-tl-sm",
+            "text-sm leading-relaxed",
+            message.type === "image" && message.content
+              ? "p-0 bg-transparent border-transparent"
+              : "px-4 py-2.5 whitespace-pre-wrap bg-surface text-text-primary rounded-2xl border border-border/50 rounded-tl-sm",
           )}
         >
-          {isThinking ? (
+          {message.type === "image" && message.content ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={message.content}
+              alt="Generated image"
+              className="rounded-2xl max-w-full"
+              loading="lazy"
+            />
+          ) : isThinking ? (
             <div
               className="inline-flex items-center gap-1.5 py-0.5"
               role="status"

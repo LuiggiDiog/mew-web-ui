@@ -2,27 +2,37 @@
 
 import { useState, useRef, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
-import { SendIcon } from "@/modules/shared/components/icons";
+import { SendIcon, ImageIcon } from "@/modules/shared/components/icons";
 import { ModelSelector } from "@/modules/chat/components/ModelSelector";
 
 interface ChatComposerProps {
   onSend?: (text: string) => void;
+  onSendImage?: (prompt: string) => void;
   disabled?: boolean;
 }
 
-export function ChatComposer({ onSend, disabled = false }: ChatComposerProps) {
+export function ChatComposer({
+  onSend,
+  onSendImage,
+  disabled = false,
+}: ChatComposerProps) {
   const [value, setValue] = useState("");
+  const [imageMode, setImageMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend?.(trimmed);
+    if (imageMode) {
+      onSendImage?.(trimmed);
+    } else {
+      onSend?.(trimmed);
+    }
     setValue("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, onSend, disabled]);
+  }, [value, onSend, onSendImage, imageMode, disabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -33,7 +43,6 @@ export function ChatComposer({ onSend, disabled = false }: ChatComposerProps) {
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
-    // Auto-grow textarea
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
@@ -50,22 +59,41 @@ export function ChatComposer({ onSend, disabled = false }: ChatComposerProps) {
         {/* Input row */}
         <div
           className={cn(
-            "flex items-end gap-2 rounded-xl border border-border",
+            "flex items-end gap-2 rounded-xl border",
+            imageMode ? "border-accent/40" : "border-border",
             "bg-surface px-3 py-2.5",
             "focus-within:border-accent/50 transition-colors"
           )}
         >
+          <button
+            type="button"
+            onClick={() => setImageMode((m) => !m)}
+            disabled={disabled}
+            className={cn(
+              "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
+              imageMode
+                ? "text-accent bg-accent/10"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated",
+              disabled && "opacity-40 cursor-not-allowed"
+            )}
+            aria-label="Toggle image mode"
+            aria-pressed={imageMode}
+            title={imageMode ? "Switch to text mode" : "Switch to image mode"}
+          >
+            <ImageIcon />
+          </button>
+
           <textarea
             ref={textareaRef}
             value={value}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
             rows={1}
-            placeholder="Message…"
+            placeholder={imageMode ? "Describe an image…" : "Message…"}
             className={cn(
               "flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary",
               "resize-none outline-none leading-relaxed",
-              "min-h-[24px] max-h-[160px]"
+              "min-h-6 max-h-40"
             )}
           />
           <button
@@ -84,7 +112,7 @@ export function ChatComposer({ onSend, disabled = false }: ChatComposerProps) {
         </div>
 
         <p className="text-center text-xs text-text-secondary mt-2">
-          Shift + Enter for new line
+          {imageMode ? "Generating via ComfyUI" : "Shift + Enter for new line"}
         </p>
       </div>
     </div>

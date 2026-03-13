@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
     conversationId: convId,
     role: "user",
     content: message,
+    type: "text",
   });
 
   // Fetch up to 20 messages as context
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
         role: "assistant",
         content: assistantContent,
         model,
+        type: "text",
       });
 
       await db

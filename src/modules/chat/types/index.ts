@@ -1,4 +1,5 @@
 export type MessageRole = "user" | "assistant";
+export type MessageType = "text" | "image";
 
 export interface Message {
   id: string;
@@ -7,4 +8,5 @@ export interface Message {
   content: string;
   createdAt: string;
   model?: string;
+  type?: MessageType;
 }

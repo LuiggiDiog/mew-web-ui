@@ -44,6 +44,7 @@ export const messages = pgTable("messages", {
   role: messageRoleEnum("role").notNull(),
   content: text("content").notNull(),
   model: text("model"),
+  type: text("type").default("text"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

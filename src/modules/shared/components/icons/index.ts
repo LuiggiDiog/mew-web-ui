@@ -7,3 +7,4 @@ export { XIcon } from "./XIcon";
 export { ChevronDownIcon } from "./ChevronDownIcon";
 export { RefreshIcon } from "./RefreshIcon";
 export { EditIcon } from "./EditIcon";
+export { ImageIcon } from "./ImageIcon";

@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         role: "assistant",
         content: assistantContent,
         model: regenerateModel,
+        type: "text",
       });
 
       // Update conversation preview

@@ -203,6 +203,64 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     [conversationId, activeModel, messages, streaming, router, setStreamingMessageId]
   );
 
+  const handleSendImage = useCallback(
+    async (prompt: string) => {
+      if (streaming) return;
+
+      const userMsg: Message = {
+        id: `optimistic-user-img-${Date.now()}`,
+        conversationId,
+        role: "user",
+        content: prompt,
+        type: "text",
+        createdAt: new Date().toISOString(),
+      };
+
+      const assistantId = `optimistic-assistant-img-${Date.now()}`;
+      const assistantMsg: Message = {
+        id: assistantId,
+        conversationId,
+        role: "assistant",
+        content: "",
+        type: "image",
+        createdAt: new Date().toISOString(),
+        model: activeModel,
+      };
+
+      setMessages((prev) => [...prev, userMsg, assistantMsg]);
+      setStreaming(true);
+      setStreamingMessageId(assistantId);
+
+      try {
+        const res = await fetch("/api/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model: activeModel, conversationId }),
+        });
+
+        if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
+        const { imageUrl } = await res.json();
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: imageUrl } : m))
+        );
+        router.refresh();
+      } catch {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: "Error: image generation failed.", type: "text" }
+              : m
+          )
+        );
+      } finally {
+        setStreaming(false);
+        setStreamingMessageId(null);
+      }
+    },
+    [conversationId, activeModel, streaming, router, setStreamingMessageId]
+  );
+
   return (
     <>
       <main
@@ -226,7 +284,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           )}
         </div>
       </main>
-      <ChatComposer onSend={handleSend} disabled={streaming} />
+      <ChatComposer onSend={handleSend} onSendImage={handleSendImage} disabled={streaming} />
     </>
   );
 }
