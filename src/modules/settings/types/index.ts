@@ -5,4 +5,5 @@ export interface AppSettings {
   darkMode: boolean;
   defaultProvider: string;
   defaultModel: string;
+  enhancePrompt: boolean;
 }
