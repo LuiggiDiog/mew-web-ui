@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
   if (conversationId && !isUuid(conversationId)) {
     return NextResponse.json(
       { error: "conversationId must be a valid UUID" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json(
       { error: `prompt exceeds max length (${MAX_PROMPT_LENGTH})` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(conversations.id, convId),
-          eq(conversations.userId, session.userId)
-        )
+          eq(conversations.userId, session.userId),
+        ),
       );
     if (!conversation) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -95,12 +95,14 @@ export async function POST(request: NextRequest) {
     .select()
     .from(settings)
     .where(eq(settings.userId, session.userId));
-  const settingsMap = Object.fromEntries(userSettings.map((s) => [s.key, s.value]));
+  const settingsMap = Object.fromEntries(
+    userSettings.map((s) => [s.key, s.value]),
+  );
 
   if (settingsMap.enhancePrompt === "true") {
     const enhanceModel = settingsMap.defaultModel ?? DEFAULT_MODEL;
     const ollamaClient = new OllamaClient(
-      process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
+      process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
     );
     try {
       let enhanced = "";
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
           { role: "system", content: ENHANCE_SYSTEM_PROMPT },
           { role: "user", content: prompt },
         ],
-        enhanceModel
+        enhanceModel,
       )) {
         enhanced += chunk;
       }
@@ -119,18 +121,26 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  console.log("Final prompt for ComfyUI:", finalPrompt);
+
   // Generate image via ComfyUI
   const comfyClient = new ComfyUIClient(
-    process.env.COMFYUI_BASE_URL ?? "http://192.168.1.202:8188"
+    process.env.COMFYUI_BASE_URL ?? "http://192.168.1.202:8188",
   );
 
   let imageBuffer: Buffer;
   try {
-    imageBuffer = await comfyClient.generate(finalPrompt, size === "large" ? "large" : "small");
+    imageBuffer = await comfyClient.generate(
+      finalPrompt,
+      size === "large" ? "large" : "small",
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("timed out")) {
-      return NextResponse.json({ error: "Image generation timed out" }, { status: 504 });
+      return NextResponse.json(
+        { error: "Image generation timed out" },
+        { status: 504 },
+      );
     }
     return NextResponse.json({ error: "ComfyUI unreachable" }, { status: 503 });
   }
@@ -159,8 +169,8 @@ export async function POST(request: NextRequest) {
     .where(
       and(
         eq(conversations.id, convId),
-        eq(conversations.userId, session.userId)
-      )
+        eq(conversations.userId, session.userId),
+      ),
     );
 
   return NextResponse.json({ imageUrl, conversationId: convId });

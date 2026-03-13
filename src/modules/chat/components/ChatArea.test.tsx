@@ -55,6 +55,9 @@ function stubApiFetch(chatOk: boolean, streamText = "AI response") {
           headers: { get: () => null },
         });
       }
+      if ((url as string).includes("/api/image")) {
+        return Promise.resolve({ ok: false });
+      }
       return Promise.resolve({ ok: false });
     })
   );
@@ -84,18 +87,14 @@ describe("ChatArea", () => {
 
   it("shows 'No messages yet.' when initialMessages is empty", async () => {
     stubApiFetch(false);
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
     expect(screen.getByText("No messages yet.")).toBeTruthy();
   });
 
   it("renders the composer", async () => {
     stubApiFetch(false);
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
-    expect(screen.getByPlaceholderText("Message…")).toBeTruthy();
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+    expect(screen.getByPlaceholderText(/Message/i)).toBeTruthy();
   });
 
   it("uses compact mobile spacing in the scroll area", async () => {
@@ -117,14 +116,13 @@ describe("ChatArea", () => {
     expect(wrapper?.className).toContain("py-2");
     expect(wrapper?.className).toContain("md:py-4");
   });
+
   it("adds user message optimistically after sending", async () => {
     stubApiFetch(true, "Great answer");
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
 
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText("Message…"), {
+      fireEvent.change(screen.getByPlaceholderText(/Message/i), {
         target: { value: "New question" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
@@ -137,12 +135,10 @@ describe("ChatArea", () => {
 
   it("shows streamed assistant response", async () => {
     stubApiFetch(true, "Great answer");
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
 
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText("Message…"), {
+      fireEvent.change(screen.getByPlaceholderText(/Message/i), {
         target: { value: "Tell me something" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
@@ -155,12 +151,10 @@ describe("ChatArea", () => {
 
   it("shows error message when API call fails", async () => {
     stubApiFetch(false);
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
 
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText("Message…"), {
+      fireEvent.change(screen.getByPlaceholderText(/Message/i), {
         target: { value: "Hello" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
@@ -173,12 +167,10 @@ describe("ChatArea", () => {
 
   it("calls router.refresh after streaming completes", async () => {
     stubApiFetch(true, "Done");
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
 
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText("Message…"), {
+      fireEvent.change(screen.getByPlaceholderText(/Message/i), {
         target: { value: "Hello" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
@@ -190,7 +182,7 @@ describe("ChatArea", () => {
   });
 });
 
-describe("ChatArea — regenerate", () => {
+describe("ChatArea - regenerate", () => {
   it("shows regenerate button on last assistant message", async () => {
     stubApiFetch(false);
     await act(async () =>
@@ -201,9 +193,7 @@ describe("ChatArea — regenerate", () => {
 
   it("does not show regenerate button when there are no messages", async () => {
     stubApiFetch(false);
-    await act(async () =>
-      render(<ChatArea conversationId="conv-1" initialMessages={[]} />)
-    );
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
     expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
   });
 
@@ -221,9 +211,12 @@ describe("ChatArea — regenerate", () => {
       expect(screen.getByText("Regenerated answer")).toBeTruthy();
     });
 
-    expect(fetch).toHaveBeenCalledWith("/api/chat/regenerate", expect.objectContaining({
-      method: "POST",
-    }));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/chat/regenerate",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
   });
 
   it("shows error when regenerate API fails", async () => {
@@ -257,7 +250,7 @@ describe("ChatArea — regenerate", () => {
   });
 });
 
-describe("ChatArea — edit message", () => {
+describe("ChatArea - edit message", () => {
   it("shows edit button on last user message", async () => {
     stubApiFetch(false);
     await act(async () =>
@@ -327,3 +320,189 @@ describe("ChatArea — edit message", () => {
   });
 });
 
+describe("ChatArea image generation", () => {
+  it("sends /api/image with prompt, conversationId and small size", async () => {
+    const mockFetch = vi.fn((url: string, options?: RequestInit) => {
+      if (url.includes("ollama/models") || url.includes("/api/settings")) {
+        return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+      }
+      if (url.includes("/api/image")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ imageUrl: "/generated/test.png" }),
+        });
+      }
+      if (url.includes("/api/chat")) {
+        return Promise.resolve({ ok: false, body: null, headers: { get: () => null } });
+      }
+      return Promise.resolve({ ok: false });
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
+    fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
+      target: { value: "a cat" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/image",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ prompt: "a cat", conversationId: "conv-1", size: "small" }),
+        })
+      );
+    });
+  });
+
+  it("adds optimistic user + assistant image placeholder and then updates with image", async () => {
+    let resolveImage: ((value: { imageUrl: string }) => void) | null = null;
+    const deferred = new Promise<{ imageUrl: string }>((resolve) => {
+      resolveImage = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("ollama/models") || url.includes("/api/settings")) {
+          return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+        }
+        if (url.includes("/api/image")) {
+          return Promise.resolve({ ok: true, json: () => deferred });
+        }
+        return Promise.resolve({ ok: false });
+      })
+    );
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
+    fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
+      target: { value: "a cat" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    expect(screen.getByText("a cat")).toBeTruthy();
+    expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
+
+    resolveImage?.({ imageUrl: "/generated/test.png" });
+
+    await waitFor(() => {
+      const img = screen.getByRole("img", { name: "Generated image" }) as HTMLImageElement;
+      expect(img.getAttribute("src")).toBe("/generated/test.png");
+    });
+  });
+
+  it("sets assistant message to text error when image generation fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("ollama/models") || url.includes("/api/settings")) {
+          return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+        }
+        if (url.includes("/api/image")) {
+          return Promise.resolve({ ok: false, status: 503 });
+        }
+        return Promise.resolve({ ok: false });
+      })
+    );
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
+    fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
+      target: { value: "a cat" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Error: image generation failed.")).toBeTruthy();
+    });
+  });
+
+  it("disables composer while generating an image", async () => {
+    let resolveImage: ((value: { imageUrl: string }) => void) | null = null;
+    const imagePromise = new Promise<{ imageUrl: string }>((resolve) => {
+      resolveImage = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("ollama/models") || url.includes("/api/settings")) {
+          return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+        }
+        if (url.includes("/api/image")) {
+          return Promise.resolve({ ok: true, json: () => imagePromise });
+        }
+        return Promise.resolve({ ok: false });
+      })
+    );
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
+    fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
+      target: { value: "a cat" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Toggle image mode" })).toBeDisabled();
+    });
+
+    resolveImage?.({ imageUrl: "/generated/test.png" });
+
+    await waitFor(() => {
+      expect(screen.getByRole("img", { name: "Generated image" })).toBeTruthy();
+    });
+  });
+
+  it("calls router.refresh after successful image generation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("ollama/models") || url.includes("/api/settings")) {
+          return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+        }
+        if (url.includes("/api/image")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ imageUrl: "/generated/test.png" }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      })
+    );
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle image mode" }));
+    fireEvent.change(screen.getByPlaceholderText(/Describe an image/i), {
+      target: { value: "a cat" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+});

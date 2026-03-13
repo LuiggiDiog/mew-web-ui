@@ -27,7 +27,7 @@ const ASSISTANT_THINKING_MSG: Message = {
   content: "",
 };
 
-describe("MessageBubble — user message", () => {
+describe("MessageBubble - user message", () => {
   it("renders the message content", () => {
     render(<MessageBubble message={USER_MSG} />);
     expect(screen.getByText("Hello there!")).toBeTruthy();
@@ -51,7 +51,7 @@ describe("MessageBubble — user message", () => {
   });
 });
 
-describe("MessageBubble — assistant message", () => {
+describe("MessageBubble - assistant message", () => {
   it("renders the message content", () => {
     render(<MessageBubble message={ASSISTANT_MSG} />);
     expect(screen.getByText("Hi! How can I help?")).toBeTruthy();
@@ -99,7 +99,57 @@ describe("MessageBubble — assistant message", () => {
   });
 });
 
-describe("MessageBubble — regenerate action", () => {
+describe("MessageBubble image messages", () => {
+  it("renders generated image for image message content", () => {
+    const imageMsg: Message = {
+      ...ASSISTANT_MSG,
+      type: "image",
+      content: "/generated/test.png",
+    };
+
+    render(<MessageBubble message={imageMsg} />);
+    const image = screen.getByRole("img", { name: "Generated image" }) as HTMLImageElement;
+    expect(image.getAttribute("src")).toBe("/generated/test.png");
+  });
+
+  it("renders thinking dots when image message is still loading", () => {
+    const loadingImageMsg: Message = {
+      ...ASSISTANT_MSG,
+      type: "image",
+      content: "",
+    };
+
+    const { container } = render(<MessageBubble message={loadingImageMsg} />);
+    expect(screen.getByLabelText("Assistant is thinking")).toBeTruthy();
+    expect(container.querySelectorAll("[data-thinking-dot='true']").length).toBe(3);
+  });
+
+  it("does not render the image path as visible text", () => {
+    const imageMsg: Message = {
+      ...ASSISTANT_MSG,
+      type: "image",
+      content: "/generated/test.png",
+    };
+
+    render(<MessageBubble message={imageMsg} />);
+    expect(screen.queryByText("/generated/test.png")).toBeNull();
+  });
+
+  it("does not apply bg-surface class to image bubble", () => {
+    const imageMsg: Message = {
+      ...ASSISTANT_MSG,
+      type: "image",
+      content: "/generated/test.png",
+    };
+
+    render(<MessageBubble message={imageMsg} />);
+    const image = screen.getByRole("img", { name: "Generated image" });
+    const bubble = image.closest("div") as HTMLElement;
+    expect(bubble.className).not.toContain("bg-surface");
+  });
+});
+
+describe("MessageBubble - regenerate action", () => {
   it("does not show regenerate button by default", () => {
     render(<MessageBubble message={ASSISTANT_MSG} />);
     expect(screen.queryByRole("button", { name: "Regenerate response" })).toBeNull();
@@ -136,7 +186,7 @@ describe("MessageBubble — regenerate action", () => {
   });
 });
 
-describe("MessageBubble — edit action", () => {
+describe("MessageBubble - edit action", () => {
   it("does not show edit button by default", () => {
     render(<MessageBubble message={USER_MSG} />);
     expect(screen.queryByRole("button", { name: "Edit message" })).toBeNull();

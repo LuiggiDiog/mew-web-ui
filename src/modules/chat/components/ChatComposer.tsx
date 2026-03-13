@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
@@ -52,7 +52,7 @@ export function ChatComposer({
   return (
     <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm">
       <div className="max-w-2xl mx-auto px-4 py-3">
-        {/* Model selector — only shown in text mode */}
+        {/* Model selector - only shown in text mode */}
         {!imageMode && (
           <div className="mb-2">
             <ModelSelector />
@@ -115,34 +115,39 @@ export function ChatComposer({
         </div>
 
         {imageMode ? (
-          <div className="flex items-center justify-center gap-1 mt-2">
-            <button
-              type="button"
-              onClick={() => setImageSize("small")}
-              disabled={disabled}
-              className={cn(
-                "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
-                imageSize === "small"
-                  ? "bg-accent/15 text-accent"
-                  : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              512
-            </button>
-            <span className="text-text-secondary/40 text-xs">·</span>
-            <button
-              type="button"
-              onClick={() => setImageSize("large")}
-              disabled={disabled}
-              className={cn(
-                "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
-                imageSize === "large"
-                  ? "bg-accent/15 text-accent"
-                  : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              1024
-            </button>
+          <div className="mt-2">
+            <div className="flex items-center justify-center gap-1">
+              <button
+                type="button"
+                onClick={() => setImageSize("small")}
+                disabled={disabled}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                  imageSize === "small"
+                    ? "bg-accent/15 text-accent"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                512
+              </button>
+              <span className="text-text-secondary/40 text-xs">·</span>
+              <button
+                type="button"
+                onClick={() => setImageSize("large")}
+                disabled={disabled}
+                className={cn(
+                  "px-2.5 py-0.5 rounded-md text-xs transition-colors outline-none",
+                  imageSize === "large"
+                    ? "bg-accent/15 text-accent"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                1024
+              </button>
+            </div>
+            <p className="text-center text-xs text-text-secondary mt-1.5">
+              Generating via ComfyUI
+            </p>
           </div>
         ) : (
           <p className="text-center text-xs text-text-secondary mt-2">
@@ -153,3 +158,4 @@ export function ChatComposer({
     </div>
   );
 }
+
