@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import bcrypt from "bcryptjs";
 import { env } from "@/env";
+import { DEFAULT_MODEL } from "@/modules/shared/constants";
 
 const email = env.seedEmail;
 const password = env.seedPassword;
@@ -49,7 +50,7 @@ async function seed() {
     type: "local",
     baseUrl: ollamaUrl,
     isActive: true,
-    defaultModel: "llama3.2",
+    defaultModel: DEFAULT_MODEL,
   });
   console.log("Created Ollama provider");
 
@@ -58,7 +59,7 @@ async function seed() {
     { key: "saveHistory", value: "true" },
     { key: "darkMode", value: "true" },
     { key: "defaultProvider", value: "ollama" },
-    { key: "defaultModel", value: "llama3.2" },
+    { key: "defaultModel", value: DEFAULT_MODEL },
   ];
 
   await db.insert(schema.settings).values(
