@@ -4,7 +4,7 @@ const { mockSession } = vi.hoisted(() => ({
   mockSession: { userId: "user-1", destroy: vi.fn() },
 }));
 
-vi.mock("@/modules/auth/lib/session", () => ({
+vi.mock("@/modules/auth/services/session", () => ({
   sessionOptions: { password: "test-secret", cookieName: "test_session" },
   getSession: vi.fn().mockResolvedValue(mockSession),
 }));

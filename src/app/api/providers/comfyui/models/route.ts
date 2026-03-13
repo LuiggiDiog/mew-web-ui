@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 import { env } from "@/env";
 
 export async function GET() {

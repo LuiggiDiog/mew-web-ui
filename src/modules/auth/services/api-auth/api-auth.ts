@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, type SessionData } from "./session";
+import { getSession, type SessionData } from "@/modules/auth/services/session";
 
 /**
  * Returns the session for API routes.

@@ -10,7 +10,7 @@ vi.mock("@/modules/providers/lib/comfyui", () => ({
   }),
 }));
 
-vi.mock("@/modules/auth/lib/api-auth", () => ({
+vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({
     session: { userId: "user-1", email: "test@test.com", displayName: "Test" },
     error: null,
@@ -18,7 +18,7 @@ vi.mock("@/modules/auth/lib/api-auth", () => ({
 }));
 
 import { GET } from "./route";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 
 describe("GET /api/providers/comfyui/health", () => {
   beforeEach(() => {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
-import { LoginCard } from "./LoginCard";
+import { LoginCard } from ".";
 
 const mockPush = vi.fn();
 const mockRefresh = vi.fn();

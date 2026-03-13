@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 import {
   createConversation,
   listConversationsByUserId,

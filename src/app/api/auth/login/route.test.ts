@@ -11,7 +11,7 @@ vi.mock("@/db", () => ({
   },
 }));
 
-vi.mock("@/modules/auth/lib/session", () => ({
+vi.mock("@/modules/auth/services/session", () => ({
   sessionOptions: { password: "test-secret", cookieName: "test_session" },
   getSession: vi.fn(),
 }));
@@ -25,7 +25,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { db } from "@/db";
-import { getSession } from "@/modules/auth/lib/session";
+import { getSession } from "@/modules/auth/services/session";
 import { getIronSession } from "iron-session";
 import { POST } from "./route";
 

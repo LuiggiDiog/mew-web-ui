@@ -22,7 +22,7 @@ const {
   mockMkdir: vi.fn(),
 }));
 
-vi.mock("@/modules/auth/lib/api-auth", () => ({
+vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({ session: mockSession, error: null }),
 }));
 
@@ -64,7 +64,7 @@ vi.mock("fs/promises", () => ({
 
 import { POST } from "./route";
 import { db } from "@/db";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 
 const OWNED_CONV_ID = "9da06df8-6bb7-4c4d-82b2-b337407030a6";
 const NEW_CONV_ID = "0dcf0af0-46cf-4866-a978-a695fd7f75f0";

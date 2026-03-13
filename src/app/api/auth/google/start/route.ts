@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getSession } from "@/modules/auth/lib/session";
+import { getSession } from "@/modules/auth/services/session";
 import {
   buildGoogleAuthUrl,
   resolveGoogleRedirectUri,
   resolveRequestOrigin,
-} from "@/modules/auth/lib/google-oauth";
+} from "@/modules/auth/services/google-oauth";
 
 export async function GET(request: Request) {
   const session = await getSession();

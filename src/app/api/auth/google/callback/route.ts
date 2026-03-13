@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/modules/auth/lib/session";
+import { getSession } from "@/modules/auth/services/session";
 import {
   exchangeCodeForGoogleUser,
   resolveGoogleRedirectUri,
   resolveRequestOrigin,
-} from "@/modules/auth/lib/google-oauth";
+} from "@/modules/auth/services/google-oauth";
 import {
   createGoogleUser,
   findUserByEmail,
-} from "@/modules/auth/lib/users-repository";
+} from "@/modules/auth/repositories/users-repository";
 
 function redirectWithError(request: Request, error: string) {
   const origin = resolveRequestOrigin(request);

@@ -7,7 +7,7 @@ const { mockSession, mockSelect, mockInsert, mockListModels } = vi.hoisted(() =>
   mockListModels: vi.fn(),
 }));
 
-vi.mock("@/modules/auth/lib/api-auth", () => ({
+vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({ session: mockSession, error: null }),
 }));
 

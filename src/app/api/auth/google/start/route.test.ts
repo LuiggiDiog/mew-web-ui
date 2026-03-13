@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/modules/auth/lib/session", () => ({
+vi.mock("@/modules/auth/services/session", () => ({
   getSession: vi.fn(),
 }));
 
-import { getSession } from "@/modules/auth/lib/session";
+import { getSession } from "@/modules/auth/services/session";
 import { GET } from "./route";
 import { setEnv } from "@/env";
 

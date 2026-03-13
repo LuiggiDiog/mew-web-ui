@@ -12,7 +12,7 @@ const {
   mockUpdateReturning: vi.fn(),
 }));
 
-vi.mock("@/modules/auth/lib/api-auth", () => ({
+vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({ session: mockSession, error: null }),
 }));
 
@@ -28,7 +28,7 @@ vi.mock("@/db/schema", () => ({ conversations: {}, messages: {} }));
 vi.mock("drizzle-orm", () => ({ eq: vi.fn(), and: vi.fn(), asc: vi.fn() }));
 
 import { GET, DELETE, PATCH } from "./route";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 import { db } from "@/db";
 
 function createWhereResult<TDirect, TLimited = TDirect>(

@@ -1,9 +1,9 @@
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
-import { type SessionData, sessionOptions } from "./session-config";
+import { type SessionData, sessionOptions } from "@/modules/auth/services/session-config";
 
-export type { SessionData } from "./session-config";
-export { sessionOptions } from "./session-config";
+export type { SessionData } from "@/modules/auth/services/session-config";
+export { sessionOptions } from "@/modules/auth/services/session-config";
 
 export async function getSession() {
   return getIronSession<SessionData>(await cookies(), sessionOptions);

@@ -19,24 +19,46 @@ If a subdirectory contains a more specific `AGENTS.md`, that file takes preceden
 - Organize code by feature or module whenever possible.
 - Keep module-specific logic inside its own module.
 - Put shared code only in shared locations when it is truly reusable.
+- Inside each module, prefer a small folder structure by responsibility.
+- Use `components/` for UI.
+- Use `services/` for business logic.
+- Use `repositories/` for data access.
+- Use `types/` for shared module types.
+- Use `mocks/` for mock data.
+- Only add new folders when they are clearly needed.
+- Create dedicated folders when a unit has related files, especially tests.
+- This rule also applies to `services/`, `repositories/`, and other module-level units when needed.
+- Prefer keeping each logical unit self-contained inside its own folder.
+
+## Index Files
+
+- Use `index.ts` as the public entry point for folders.
+- Prefer folder-level imports through `index.ts` instead of importing internal files directly.
+- Keep internal implementation files inside the folder and expose only what should be public through `index.ts`.
 
 ## React
 
 - Prefer one component per file.
-- Each component must live in its own folder to keep related files together, especially tests.
-- Prefer colocating the component, its test, and closely related files in the same folder.
+- Each component should live in its own folder together with its related files, especially tests.
 - Start with a clear component, then split it into smaller parts only when needed.
-- Prefer typed props.
-- Use this base structure unless the project already follows a different established pattern:
+- Prefer typed props when the component receives props.
+- When applicable, prefer a simple and explicit component structure.
+- Adapt the structure to the real needs of the component.
+- Do not add unused props, destructuring, or types only to match an example.
+
+Example with props:
 
 ```tsx
-type PropsT = {};
+type PropsT = {
+  title: string;
+};
 
 export default function WelcomeHello(props: PropsT) {
-  const {} = props;
+  const { title } = props;
 
-  return <div>ChatArea</div>;
+  return <div>{title}</div>;
 }
+```
 
 ## Project Context
 
@@ -57,4 +79,3 @@ Main stack:
 - Tailwind CSS
 - Zustand
 - Radix UI Primitives
-```

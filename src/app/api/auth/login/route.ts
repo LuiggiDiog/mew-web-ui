@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { verifyPassword } from "@/modules/auth/lib/password";
-import { getSession } from "@/modules/auth/lib/session";
-import { findUserByEmail } from "@/modules/auth/lib/users-repository";
+import { verifyPassword } from "@/modules/auth/services/password";
+import { getSession } from "@/modules/auth/services/session";
+import { findUserByEmail } from "@/modules/auth/repositories/users-repository";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string };

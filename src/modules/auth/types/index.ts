@@ -11,4 +11,4 @@ export interface AuthUser {
   displayName: string;
 }
 
-export type { SessionData } from "@/modules/auth/lib/session";
+export type { SessionData } from "@/modules/auth/services/session";

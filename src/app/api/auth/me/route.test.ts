@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockSession: { userId?: string; email?: string; displayName?: string } = {};
 
-vi.mock("@/modules/auth/lib/session", () => ({
+vi.mock("@/modules/auth/services/session", () => ({
   sessionOptions: { password: "test-secret", cookieName: "test_session" },
   getSession: vi.fn().mockImplementation(() => Promise.resolve(mockSession)),
 }));

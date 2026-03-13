@@ -16,7 +16,7 @@ const {
   mockDeleteWhere: vi.fn(),
 }));
 
-vi.mock("@/modules/auth/lib/api-auth", () => ({
+vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({ session: mockSession, error: null }),
 }));
 
@@ -39,7 +39,7 @@ vi.mock("@/modules/providers/lib/ollama", () => ({
 }));
 
 import { POST } from "./route";
-import { getApiSession } from "@/modules/auth/lib/api-auth";
+import { getApiSession } from "@/modules/auth/services/api-auth";
 import { db } from "@/db";
 
 function createWhereResult<TDirect, TLimited = TDirect>(

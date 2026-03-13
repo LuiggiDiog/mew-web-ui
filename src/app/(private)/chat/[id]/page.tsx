@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSession } from "@/modules/auth/lib/session";
+import { getSession } from "@/modules/auth/services/session";
 import { ChatHeader } from "@/modules/chat/components/ChatHeader";
 import { ChatArea } from "@/modules/chat/components/ChatArea";
 import type { Message } from "@/modules/chat/types";
