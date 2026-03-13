@@ -5,12 +5,12 @@ import {
   deleteMessageById,
   findLastMessageByConversationId,
   listMessagesByConversationId,
-} from "@/modules/chat/lib/messages-repository";
+} from "@/modules/chat/repositories/messages-repository";
 import {
   findConversationByIdForUser,
   updateConversationPreviewByIdForUser,
-} from "@/modules/conversations/lib/conversations-repository";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
+} from "@/modules/conversations/repositories/conversations-repository";
+import { OllamaClient } from "@/modules/providers/services/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { env } from "@/env";
 

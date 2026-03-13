@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSession } from "@/modules/auth/services/api-auth";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { OllamaClient } from "@/modules/providers/services/ollama";
 import { env } from "@/env";
 import {
   DEFAULT_MODEL_SETTING_KEY,
   resolveDefaultModel,
-} from "@/modules/settings/lib/default-model";
+} from "@/modules/settings/services/default-model";
 import {
   getSettingsMapByUserId,
   upsertSetting,
   upsertSettings,
-} from "@/modules/settings/lib/settings-repository";
+} from "@/modules/settings/repositories/settings-repository";
 
 async function ensureValidDefaultModel(
   userId: string,

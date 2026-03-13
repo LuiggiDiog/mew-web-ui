@@ -4,8 +4,8 @@ import { ChatHeader } from "@/modules/chat/components/ChatHeader";
 import { ChatArea } from "@/modules/chat/components/ChatArea";
 import type { Message } from "@/modules/chat/types";
 import { isUuid } from "@/modules/shared/utils/uuid";
-import { listMessagesByConversationId } from "@/modules/chat/lib/messages-repository";
-import { findConversationByIdForUser } from "@/modules/conversations/lib/conversations-repository";
+import { listMessagesByConversationId } from "@/modules/chat/repositories/messages-repository";
+import { findConversationByIdForUser } from "@/modules/conversations/repositories/conversations-repository";
 
 // Next.js 16 App Router: params is a Promise
 export default async function ConversationPage({

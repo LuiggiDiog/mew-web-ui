@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSession } from "@/modules/auth/services/api-auth";
 import { isUuid } from "@/modules/shared/utils/uuid";
-import { listMessagesByConversationId } from "@/modules/chat/lib/messages-repository";
+import { listMessagesByConversationId } from "@/modules/chat/repositories/messages-repository";
 import {
   deleteConversationByIdForUser,
   findConversationByIdForUser,
   updateConversationTitleByIdForUser,
-} from "@/modules/conversations/lib/conversations-repository";
+} from "@/modules/conversations/repositories/conversations-repository";
 
 type Params = { params: Promise<{ id: string }> };
 const MAX_TITLE_LENGTH = 200;

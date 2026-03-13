@@ -4,7 +4,7 @@ import { SettingsToggle } from "@/modules/settings/components/SettingsToggle";
 import { DefaultModelPicker } from "@/modules/settings/components/DefaultModelPicker";
 import { ProvidersList } from "@/modules/settings/components/ProvidersList";
 import { getSession } from "@/modules/auth/services/session";
-import { getSettingsMapByUserId } from "@/modules/settings/lib/settings-repository";
+import { getSettingsMapByUserId } from "@/modules/settings/repositories/settings-repository";
 
 export default async function SettingsPage() {
   const session = await getSession();

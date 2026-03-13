@@ -4,12 +4,12 @@ import {
   createConversation,
   findConversationByIdForUser,
   updateConversationPreviewByIdForUser,
-} from "@/modules/conversations/lib/conversations-repository";
+} from "@/modules/conversations/repositories/conversations-repository";
 import {
   createMessage,
   listMessagesByConversationId,
-} from "@/modules/chat/lib/messages-repository";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
+} from "@/modules/chat/repositories/messages-repository";
+import { OllamaClient } from "@/modules/providers/services/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { env } from "@/env";
 

@@ -22,7 +22,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({ settings: {} }));
 vi.mock("drizzle-orm", () => ({ eq: vi.fn() }));
-vi.mock("@/modules/providers/lib/ollama", () => ({
+vi.mock("@/modules/providers/services/ollama", () => ({
   OllamaClient: vi.fn().mockImplementation(function () {
     return { listModels: mockListModels };
   }),

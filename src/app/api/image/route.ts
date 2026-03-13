@@ -5,15 +5,15 @@ import { getApiSession } from "@/modules/auth/services/api-auth";
 import {
   createMessage,
   updateMessageContentByIdInConversation,
-} from "@/modules/chat/lib/messages-repository";
+} from "@/modules/chat/repositories/messages-repository";
 import {
   createConversation,
   findConversationByIdForUser,
   updateConversationPreviewByIdForUser,
-} from "@/modules/conversations/lib/conversations-repository";
-import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
-import { getSettingsMapByUserId } from "@/modules/settings/lib/settings-repository";
+} from "@/modules/conversations/repositories/conversations-repository";
+import { ComfyUIClient } from "@/modules/providers/services/comfyui";
+import { OllamaClient } from "@/modules/providers/services/ollama";
+import { getSettingsMapByUserId } from "@/modules/settings/repositories/settings-repository";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
 import { env } from "@/env";

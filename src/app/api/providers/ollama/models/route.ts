@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { OllamaClient } from "@/modules/providers/services/ollama";
 import { env } from "@/env";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
 

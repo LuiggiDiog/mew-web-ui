@@ -5,7 +5,7 @@ const { mockIsConnected, mockListModels } = vi.hoisted(() => ({
   mockListModels: vi.fn(),
 }));
 
-vi.mock("@/modules/providers/lib/comfyui", () => ({
+vi.mock("@/modules/providers/services/comfyui", () => ({
   ComfyUIClient: vi.fn().mockImplementation(function () {
     return { isConnected: mockIsConnected, listModels: mockListModels };
   }),

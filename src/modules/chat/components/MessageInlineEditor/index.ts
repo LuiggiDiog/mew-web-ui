@@ -1,0 +1,1 @@
+export { MessageInlineEditor } from "./MessageInlineEditor";

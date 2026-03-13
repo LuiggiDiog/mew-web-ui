@@ -26,7 +26,7 @@ vi.mock("@/db", () => ({
 vi.mock("@/db/schema", () => ({ conversations: {}, messages: {} }));
 vi.mock("drizzle-orm", () => ({ eq: vi.fn(), and: vi.fn(), asc: vi.fn(), desc: vi.fn() }));
 
-vi.mock("@/modules/providers/lib/ollama", () => ({
+vi.mock("@/modules/providers/services/ollama", () => ({
   OllamaClient: vi.fn().mockImplementation(function () {
     return { chat: mockChat };
   }),

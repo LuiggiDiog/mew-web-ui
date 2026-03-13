@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
+import { ComfyUIClient } from "@/modules/providers/services/comfyui";
 import { getApiSession } from "@/modules/auth/services/api-auth";
 import { env } from "@/env";
 

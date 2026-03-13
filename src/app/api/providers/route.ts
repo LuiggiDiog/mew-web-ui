@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiSession } from "@/modules/auth/services/api-auth";
-import { OllamaClient } from "@/modules/providers/lib/ollama";
-import { listProvidersByUserId } from "@/modules/providers/lib/providers-repository";
+import { OllamaClient } from "@/modules/providers/services/ollama";
+import { listProvidersByUserId } from "@/modules/providers/repositories/providers-repository";
 
 export async function GET() {
   const { session, error } = await getApiSession();

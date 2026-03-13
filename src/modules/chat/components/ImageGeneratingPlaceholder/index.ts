@@ -1,0 +1,1 @@
+export { ImageGeneratingPlaceholder } from "./ImageGeneratingPlaceholder";

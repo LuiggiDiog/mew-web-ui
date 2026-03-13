@@ -45,13 +45,13 @@ vi.mock("drizzle-orm", () => ({
   and: vi.fn(),
 }));
 
-vi.mock("@/modules/providers/lib/comfyui", () => ({
+vi.mock("@/modules/providers/services/comfyui", () => ({
   ComfyUIClient: vi.fn().mockImplementation(function () {
     return { generate: mockComfyGenerate };
   }),
 }));
 
-vi.mock("@/modules/providers/lib/ollama", () => ({
+vi.mock("@/modules/providers/services/ollama", () => ({
   OllamaClient: vi.fn().mockImplementation(function () {
     return { chat: mockOllamaChat };
   }),

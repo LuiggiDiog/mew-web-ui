@@ -3,7 +3,7 @@ import { getApiSession } from "@/modules/auth/services/api-auth";
 import {
   createConversation,
   listConversationsByUserId,
-} from "@/modules/conversations/lib/conversations-repository";
+} from "@/modules/conversations/repositories/conversations-repository";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_MODEL_LENGTH = 200;
