@@ -27,6 +27,7 @@ vi.mock("@/modules/auth/lib/session", () => ({
 
 import { getSession } from "@/modules/auth/lib/session";
 import { GET } from "./route";
+import { setEnv } from "@/env";
 
 const mockSession = {
   userId: undefined as string | undefined,
@@ -47,9 +48,9 @@ beforeEach(() => {
 
   vi.mocked(getSession).mockResolvedValue(mockSession as never);
 
-  process.env.GOOGLE_CLIENT_ID = "google-client-id";
-  process.env.GOOGLE_CLIENT_SECRET = "google-client-secret";
-  process.env.GOOGLE_REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
+  setEnv("GOOGLE_CLIENT_ID", "google-client-id");
+  setEnv("GOOGLE_CLIENT_SECRET", "google-client-secret");
+  setEnv("GOOGLE_REDIRECT_URI", "http://localhost:3000/api/auth/google/callback");
 
   vi.stubGlobal("fetch", vi.fn());
 });

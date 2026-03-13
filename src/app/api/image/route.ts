@@ -9,6 +9,7 @@ import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
+import { env } from "@/env";
 
 const MAX_PROMPT_LENGTH = 2_000;
 const COMFYUI_MODEL_LABEL = "z-image-turbo";
@@ -99,11 +100,13 @@ export async function POST(request: NextRequest) {
     userSettings.map((s) => [s.key, s.value]),
   );
 
+  console.log("settingsMap.enhancePrompt:", settingsMap.enhancePrompt);
+
   if (settingsMap.enhancePrompt === "true") {
+    console.log("Enhancing prompt via Ollama...");
     const enhanceModel = settingsMap.defaultModel ?? DEFAULT_MODEL;
-    const ollamaClient = new OllamaClient(
-      process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",
-    );
+    console.log("Using enhance model:", enhanceModel);
+    const ollamaClient = new OllamaClient(env.ollamaBaseUrl);
     try {
       let enhanced = "";
       for await (const chunk of ollamaClient.chat(
@@ -124,9 +127,7 @@ export async function POST(request: NextRequest) {
   console.log("Final prompt for ComfyUI:", finalPrompt);
 
   // Generate image via ComfyUI
-  const comfyClient = new ComfyUIClient(
-    process.env.COMFYUI_BASE_URL ?? "http://192.168.1.202:8188",
-  );
+  const comfyClient = new ComfyUIClient(env.comfyuiBaseUrl);
 
   let imageBuffer: Buffer;
   try {

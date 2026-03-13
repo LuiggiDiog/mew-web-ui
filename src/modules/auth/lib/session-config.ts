@@ -1,4 +1,5 @@
 import type { SessionOptions } from "iron-session";
+import { env } from "@/env";
 
 export interface SessionData {
   userId?: string;
@@ -8,7 +9,7 @@ export interface SessionData {
   oauthRedirectUri?: string;
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
+const SESSION_SECRET = env.sessionSecret;
 if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
   throw new Error(
     "SESSION_SECRET is required and must be at least 32 characters long"
@@ -17,9 +18,9 @@ if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
 
 export const sessionOptions: SessionOptions = {
   password: SESSION_SECRET,
-  cookieName: process.env.SESSION_COOKIE_NAME ?? "workspace_session",
+  cookieName: env.sessionCookieName,
   cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
+    secure: env.isProduction,
     httpOnly: true,
     sameSite: "lax",
   },

@@ -1,3 +1,5 @@
+import { env } from "@/env";
+
 const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo";
@@ -15,8 +17,8 @@ interface GoogleUserInfo {
 }
 
 function getGoogleOAuthConfig(): GoogleOAuthConfig | null {
-  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const clientId = env.googleClientId;
+  const clientSecret = env.googleClientSecret;
 
   if (!clientId || !clientSecret) {
     return null;
@@ -26,7 +28,7 @@ function getGoogleOAuthConfig(): GoogleOAuthConfig | null {
 }
 
 export function resolveGoogleRedirectUri(requestOrigin: string): string {
-  const configured = process.env.GOOGLE_REDIRECT_URI?.trim();
+  const configured = env.googleRedirectUri;
   if (configured) return configured;
   return `${requestOrigin}/api/auth/google/callback`;
 }

@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { env } from "@/env";
 
 const TEST_ONLY_MODEL =
   "hf.co/mradermacher/Dolphin-Mistral-24B-Venice-Edition-GGUF:Q4_K_M";
 
-function isTrue(value: string | undefined): boolean {
-  return value?.toLowerCase() === "true";
-}
-
 export async function GET() {
-  const client = new OllamaClient(
-    process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
-  );
+  const client = new OllamaClient(env.ollamaBaseUrl);
 
   const connected = await client.isConnected();
   if (!connected) {
@@ -22,7 +17,7 @@ export async function GET() {
   }
 
   const models = await client.listModels();
-  const testOnlyMode = isTrue(process.env.OLLAMA_TEST_ONLY_MODEL_ENABLED);
+  const testOnlyMode = env.ollamaTestOnlyModelEnabled;
   const filteredModels = testOnlyMode
     ? models.filter((model) => model.name === TEST_ONLY_MODEL)
     : models;

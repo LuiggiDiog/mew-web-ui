@@ -1,3 +1,5 @@
+import { env } from "@/env";
+
 export interface ComfyModel {
   name: string;
 }
@@ -91,7 +93,7 @@ export class ComfyUIClient {
       "16": {
         class_type: "UNETLoader",
         inputs: {
-          unet_name: process.env.COMFYUI_UNET_MODEL ?? "z_image_turbo_nvfp4.safetensors",
+          unet_name: env.comfyuiUnetModel,
           weight_dtype: "default",
         },
       },
@@ -99,7 +101,7 @@ export class ComfyUIClient {
       "18": {
         class_type: "CLIPLoader",
         inputs: {
-          clip_name: process.env.COMFYUI_CLIP_MODEL ?? "qwen_3_4b_fp4_mixed.safetensors",
+          clip_name: env.comfyuiClipModel,
           type: "lumina2",
           device: "default",
         },
@@ -108,7 +110,7 @@ export class ComfyUIClient {
       "17": {
         class_type: "VAELoader",
         inputs: {
-          vae_name: process.env.COMFYUI_VAE_MODEL ?? "ae.safetensors",
+          vae_name: env.comfyuiVaeModel,
         },
       },
       // AuraFlow-compatible sampling shift

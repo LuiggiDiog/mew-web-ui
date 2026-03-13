@@ -5,6 +5,7 @@ import { eq, and, asc, desc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
+import { env } from "@/env";
 
 const MAX_MODEL_LENGTH = 200;
 
@@ -81,9 +82,7 @@ export async function POST(request: NextRequest) {
 
   const context = history.map((m) => ({ role: m.role, content: m.content }));
 
-  const ollamaClient = new OllamaClient(
-    process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
-  );
+  const ollamaClient = new OllamaClient(env.ollamaBaseUrl);
 
   const stream = new ReadableStream({
     async start(controller) {

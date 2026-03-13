@@ -12,14 +12,15 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import bcrypt from "bcryptjs";
+import { env } from "@/env";
 
-const email = process.env.SEED_EMAIL ?? "admin@workspace.local";
-const password = process.env.SEED_PASSWORD ?? "changeme";
-const displayName = process.env.SEED_DISPLAY_NAME ?? "Admin";
-const ollamaUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
+const email = env.seedEmail;
+const password = env.seedPassword;
+const displayName = env.seedDisplayName;
+const ollamaUrl = env.ollamaBaseUrl;
 
 async function seed() {
-  const client = postgres(process.env.DATABASE_URL!);
+  const client = postgres(env.databaseUrl);
   const db = drizzle(client, { schema });
 
   console.log("Seeding database...");

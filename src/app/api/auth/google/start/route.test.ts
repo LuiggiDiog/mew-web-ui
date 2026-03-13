@@ -6,6 +6,7 @@ vi.mock("@/modules/auth/lib/session", () => ({
 
 import { getSession } from "@/modules/auth/lib/session";
 import { GET } from "./route";
+import { setEnv } from "@/env";
 
 const mockSession = {
   oauthState: undefined as string | undefined,
@@ -18,14 +19,14 @@ beforeEach(() => {
   mockSession.oauthState = undefined;
   mockSession.oauthRedirectUri = undefined;
   vi.mocked(getSession).mockResolvedValue(mockSession as never);
-  process.env.GOOGLE_CLIENT_ID = "google-client-id";
-  process.env.GOOGLE_CLIENT_SECRET = "google-client-secret";
-  process.env.GOOGLE_REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
+  setEnv("GOOGLE_CLIENT_ID", "google-client-id");
+  setEnv("GOOGLE_CLIENT_SECRET", "google-client-secret");
+  setEnv("GOOGLE_REDIRECT_URI", "http://localhost:3000/api/auth/google/callback");
 });
 
 describe("GET /api/auth/google/start", () => {
   it("returns 503 when oauth is not configured", async () => {
-    process.env.GOOGLE_CLIENT_ID = "";
+    setEnv("GOOGLE_CLIENT_ID", "");
 
     const response = await GET(new Request("http://localhost:3000/api/auth/google/start"));
 
@@ -58,7 +59,7 @@ describe("GET /api/auth/google/start", () => {
   });
 
   it("builds redirect uri from request origin when env is not set", async () => {
-    process.env.GOOGLE_REDIRECT_URI = "";
+    setEnv("GOOGLE_REDIRECT_URI", "");
 
     const response = await GET(new Request("https://example.ngrok.app/api/auth/google/start"));
     const location = response.headers.get("location");
@@ -71,7 +72,7 @@ describe("GET /api/auth/google/start", () => {
   });
 
   it("prefers forwarded headers for origin behind reverse proxy", async () => {
-    process.env.GOOGLE_REDIRECT_URI = "";
+    setEnv("GOOGLE_REDIRECT_URI", "");
 
     const req = new Request("http://localhost:3000/api/auth/google/start", {
       headers: {
