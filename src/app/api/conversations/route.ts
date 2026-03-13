@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { conversations } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
+import {
+  createConversation,
+  listConversationsByUserId,
+} from "@/modules/conversations/lib/conversations-repository";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_MODEL_LENGTH = 200;
@@ -12,11 +13,7 @@ export async function GET() {
   const { session, error } = await getApiSession();
   if (error) return error;
 
-  const rows = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.userId, session.userId))
-    .orderBy(desc(conversations.updatedAt));
+  const rows = await listConversationsByUserId(session.userId);
 
   return NextResponse.json({ conversations: rows });
 }
@@ -64,10 +61,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const [conversation] = await db
-    .insert(conversations)
-    .values({ userId: session.userId, title, model, provider })
-    .returning();
+  const conversation = await createConversation({
+    userId: session.userId,
+    title,
+    model,
+    provider,
+  });
 
   return NextResponse.json({ conversation }, { status: 201 });
 }

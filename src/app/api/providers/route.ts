@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { providers } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { listProvidersByUserId } from "@/modules/providers/lib/providers-repository";
 
 export async function GET() {
   const { session, error } = await getApiSession();
   if (error) return error;
 
-  const rows = await db
-    .select()
-    .from(providers)
-    .where(eq(providers.userId, session.userId));
+  const rows = await listProvidersByUserId(session.userId);
 
   // Augment each provider with live health check
   const result = await Promise.all(

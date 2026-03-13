@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { users } from "@/db/schema";
 import { getSession } from "@/modules/auth/lib/session";
 import {
   exchangeCodeForGoogleUser,
   resolveGoogleRedirectUri,
   resolveRequestOrigin,
 } from "@/modules/auth/lib/google-oauth";
+import {
+  createGoogleUser,
+  findUserByEmail,
+} from "@/modules/auth/lib/users-repository";
 
 function redirectWithError(request: Request, error: string) {
   const origin = resolveRequestOrigin(request);
@@ -32,9 +33,7 @@ export async function GET(request: Request) {
   if (!profile.email_verified) return redirectWithError(request, "oauth_email_unverified");
 
   const normalizedEmail = profile.email.trim().toLowerCase();
-  const existingUser = await db.query.users.findFirst({
-    where: eq(users.email, normalizedEmail),
-  });
+  const existingUser = await findUserByEmail(normalizedEmail);
 
   if (existingUser && existingUser.authProvider === "local") {
     return redirectWithError(request, "account_exists_manual");
@@ -42,17 +41,11 @@ export async function GET(request: Request) {
 
   let user = existingUser;
   if (!user) {
-    const [created] = await db
-      .insert(users)
-      .values({
-        email: normalizedEmail,
-        displayName: profile.name?.trim() || normalizedEmail.split("@")[0],
-        passwordHash: null,
-        authProvider: "google",
-        googleSub: profile.sub,
-      })
-      .returning();
-    user = created;
+    user = await createGoogleUser({
+      email: normalizedEmail,
+      displayName: profile.name?.trim() || normalizedEmail.split("@")[0],
+      googleSub: profile.sub,
+    });
   }
 
   session.userId = user.id;

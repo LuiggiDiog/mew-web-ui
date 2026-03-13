@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { conversations, messages } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
+import {
+  createMessage,
+  deleteMessageById,
+  listMessagesByConversationId,
+  updateMessageContentByIdInConversation,
+} from "@/modules/chat/lib/messages-repository";
+import {
+  findConversationByIdForUser,
+  updateConversationPreviewByIdForUser,
+} from "@/modules/conversations/lib/conversations-repository";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { env } from "@/env";
@@ -75,26 +82,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const [conversation] = await db
-    .select()
-    .from(conversations)
-    .where(
-      and(
-        eq(conversations.id, conversationId),
-        eq(conversations.userId, session.userId)
-      )
-    );
+  const conversation = await findConversationByIdForUser(
+    session.userId,
+    conversationId
+  );
 
   if (!conversation) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const recentHistory = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.conversationId, conversationId))
-    .orderBy(desc(messages.createdAt))
-    .limit(MAX_HISTORY_MESSAGES);
+  const recentHistory = await listMessagesByConversationId(conversationId, {
+    order: "desc",
+    limit: MAX_HISTORY_MESSAGES,
+  });
   const history = [...recentHistory].reverse();
 
   const targetIndex = history.findIndex((m) => m.id === messageId);
@@ -112,19 +112,15 @@ export async function POST(request: NextRequest) {
 
   const editModel = model || conversation.model;
 
-  await db
-    .update(messages)
-    .set({ content: trimmedContent })
-    .where(
-      and(
-        eq(messages.id, targetMessage.id),
-        eq(messages.conversationId, conversationId)
-      )
-    );
+  await updateMessageContentByIdInConversation(
+    targetMessage.id,
+    conversationId,
+    trimmedContent
+  );
 
   const trailingMessages = history.slice(targetIndex + 1);
   for (const trailing of trailingMessages) {
-    await db.delete(messages).where(eq(messages.id, trailing.id));
+    await deleteMessageById(trailing.id);
   }
 
   const editedHistory = history.slice(0, targetIndex + 1).map((m, index) =>
@@ -165,7 +161,7 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      await db.insert(messages).values({
+      await createMessage({
         conversationId,
         role: "assistant",
         content: assistantContent,
@@ -173,18 +169,11 @@ export async function POST(request: NextRequest) {
         type: "text",
       });
 
-      await db
-        .update(conversations)
-        .set({
-          preview: assistantContent.slice(0, 100),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(conversations.id, conversationId),
-            eq(conversations.userId, session.userId)
-          )
-        );
+      await updateConversationPreviewByIdForUser(
+        session.userId,
+        conversationId,
+        assistantContent.slice(0, 100)
+      );
 
       controller.close();
     },

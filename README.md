@@ -41,6 +41,13 @@ Mew WebUI is inspired by tools like Open WebUI, but with a sharper focus on:
 - Drizzle ORM + postgres
 - Vitest + Testing Library
 
+## Database access conventions
+
+- Centralize runtime DB access in repositories under `src/modules/*/lib/*-repository.ts`.
+- Keep API routes and server pages focused on request/response and business flow; they should call repository functions instead of importing `db` directly.
+- Group queries by feature domain (`auth`, `settings`, `providers`, `conversations`, `chat/messages`) to reduce duplication and improve control.
+- Keep user-scoped filters inside repositories to avoid repeating security-sensitive conditions across routes.
+
 ## Prerequisites
 
 - Node.js 20+

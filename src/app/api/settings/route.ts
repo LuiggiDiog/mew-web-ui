@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { settings } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
 import { env } from "@/env";
@@ -9,6 +6,11 @@ import {
   DEFAULT_MODEL_SETTING_KEY,
   resolveDefaultModel,
 } from "@/modules/settings/lib/default-model";
+import {
+  getSettingsMapByUserId,
+  upsertSetting,
+  upsertSettings,
+} from "@/modules/settings/lib/settings-repository";
 
 async function ensureValidDefaultModel(
   userId: string,
@@ -31,17 +33,7 @@ async function ensureValidDefaultModel(
       return currentSettings;
     }
 
-    await db
-      .insert(settings)
-      .values({
-        userId,
-        key: DEFAULT_MODEL_SETTING_KEY,
-        value: resolvedDefaultModel,
-      })
-      .onConflictDoUpdate({
-        target: [settings.userId, settings.key],
-        set: { value: resolvedDefaultModel, updatedAt: new Date() },
-      });
+    await upsertSetting(userId, DEFAULT_MODEL_SETTING_KEY, resolvedDefaultModel);
 
     return {
       ...currentSettings,
@@ -57,15 +49,7 @@ export async function GET() {
   const { session, error } = await getApiSession();
   if (error) return error;
 
-  const rows = await db
-    .select()
-    .from(settings)
-    .where(eq(settings.userId, session.userId));
-
-  const flat: Record<string, string> = {};
-  for (const row of rows) {
-    flat[row.key] = row.value;
-  }
+  const flat = await getSettingsMapByUserId(session.userId);
 
   const normalizedSettings = await ensureValidDefaultModel(session.userId, flat);
 
@@ -78,15 +62,7 @@ export async function PATCH(request: NextRequest) {
 
   const body = await request.json() as Record<string, string>;
 
-  for (const [key, value] of Object.entries(body)) {
-    await db
-      .insert(settings)
-      .values({ userId: session.userId, key, value })
-      .onConflictDoUpdate({
-        target: [settings.userId, settings.key],
-        set: { value, updatedAt: new Date() },
-      });
-  }
+  await upsertSettings(session.userId, body);
 
   return NextResponse.json({ ok: true });
 }

@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
-import { db } from "@/db";
-import { conversations, messages } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
 import { getSession } from "@/modules/auth/lib/session";
 import { ChatHeader } from "@/modules/chat/components/ChatHeader";
 import { ChatArea } from "@/modules/chat/components/ChatArea";
 import type { Message } from "@/modules/chat/types";
 import { isUuid } from "@/modules/shared/utils/uuid";
+import { listMessagesByConversationId } from "@/modules/chat/lib/messages-repository";
+import { findConversationByIdForUser } from "@/modules/conversations/lib/conversations-repository";
 
 // Next.js 16 App Router: params is a Promise
 export default async function ConversationPage({
@@ -19,18 +18,11 @@ export default async function ConversationPage({
 
   if (!session.userId || !isUuid(id)) notFound();
 
-  const [conversation] = await db
-    .select()
-    .from(conversations)
-    .where(and(eq(conversations.id, id), eq(conversations.userId, session.userId)));
+  const conversation = await findConversationByIdForUser(session.userId, id);
 
   if (!conversation) notFound();
 
-  const msgs = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.conversationId, id))
-    .orderBy(asc(messages.createdAt));
+  const msgs = await listMessagesByConversationId(id, { order: "asc" });
 
   const initialMessages: Message[] = msgs.map((m) => ({
     id: m.id,

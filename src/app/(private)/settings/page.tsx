@@ -3,17 +3,14 @@ import { SettingsSection } from "@/modules/settings/components/SettingsSection";
 import { SettingsToggle } from "@/modules/settings/components/SettingsToggle";
 import { DefaultModelPicker } from "@/modules/settings/components/DefaultModelPicker";
 import { ProvidersList } from "@/modules/settings/components/ProvidersList";
-import { db } from "@/db";
-import { settings } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { getSession } from "@/modules/auth/lib/session";
+import { getSettingsMapByUserId } from "@/modules/settings/lib/settings-repository";
 
 export default async function SettingsPage() {
   const session = await getSession();
-  const rows = session.userId
-    ? await db.select().from(settings).where(eq(settings.userId, session.userId))
-    : [];
-  const s = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const s = session.userId
+    ? await getSettingsMapByUserId(session.userId)
+    : {};
   const bool = (key: string, fallback = false) =>
     key in s ? s[key] === "true" : fallback;
 

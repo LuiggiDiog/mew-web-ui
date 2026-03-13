@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { conversations, messages } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
+import {
+  createConversation,
+  findConversationByIdForUser,
+  updateConversationPreviewByIdForUser,
+} from "@/modules/conversations/lib/conversations-repository";
+import {
+  createMessage,
+  listMessagesByConversationId,
+} from "@/modules/chat/lib/messages-repository";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { env } from "@/env";
@@ -69,30 +75,24 @@ export async function POST(request: NextRequest) {
   // Resolve or create conversation, always scoped to the authenticated user
   let convId = conversationId;
   if (convId) {
-    const [conversation] = await db
-      .select()
-      .from(conversations)
-      .where(
-        and(
-          eq(conversations.id, convId),
-          eq(conversations.userId, session.userId)
-        )
-      );
+    const conversation = await findConversationByIdForUser(session.userId, convId);
 
     if (!conversation) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
   } else {
     const title = message.slice(0, 60);
-    const [newConv] = await db
-      .insert(conversations)
-      .values({ userId: session.userId, title, model, provider })
-      .returning();
+    const newConv = await createConversation({
+      userId: session.userId,
+      title,
+      model,
+      provider,
+    });
     convId = newConv.id;
   }
 
   // Save user message
-  await db.insert(messages).values({
+  await createMessage({
     conversationId: convId,
     role: "user",
     content: message,
@@ -100,12 +100,10 @@ export async function POST(request: NextRequest) {
   });
 
   // Fetch up to 20 messages as context
-  const history = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.conversationId, convId))
-    .orderBy(asc(messages.createdAt))
-    .limit(20);
+  const history = await listMessagesByConversationId(convId, {
+    order: "asc",
+    limit: 20,
+  });
 
   const context = history.map((m) => ({ role: m.role, content: m.content }));
 
@@ -141,7 +139,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Persist assistant message and update conversation
-      await db.insert(messages).values({
+      await createMessage({
         conversationId: convId!,
         role: "assistant",
         content: assistantContent,
@@ -149,18 +147,11 @@ export async function POST(request: NextRequest) {
         type: "text",
       });
 
-      await db
-        .update(conversations)
-        .set({
-          preview: assistantContent.slice(0, 100),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(conversations.id, convId!),
-            eq(conversations.userId, session.userId)
-          )
-        );
+      await updateConversationPreviewByIdForUser(
+        session.userId,
+        convId!,
+        assistantContent.slice(0, 100)
+      );
 
       controller.close();
     },

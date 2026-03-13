@@ -23,6 +23,8 @@ If a subdirectory contains a more specific `AGENTS.md`, that file takes preceden
 ## React
 
 - Prefer one component per file.
+- Each component must live in its own folder to keep related files together, especially tests.
+- Prefer colocating the component, its test, and closely related files in the same folder.
 - Start with a clear component, then split it into smaller parts only when needed.
 - Prefer typed props.
 - Use this base structure unless the project already follows a different established pattern:
@@ -35,7 +37,6 @@ export default function WelcomeHello(props: PropsT) {
 
   return <div>ChatArea</div>;
 }
-```
 
 ## Project Context
 
@@ -56,3 +57,4 @@ Main stack:
 - Tailwind CSS
 - Zustand
 - Radix UI Primitives
+```

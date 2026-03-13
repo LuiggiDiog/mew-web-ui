@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { users } from "@/db/schema";
 import { verifyPassword } from "@/modules/auth/lib/password";
 import { getSession } from "@/modules/auth/lib/session";
+import { findUserByEmail } from "@/modules/auth/lib/users-repository";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string };
@@ -23,9 +21,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, email.toLowerCase().trim()),
-  });
+  const user = await findUserByEmail(email.toLowerCase().trim());
 
   if (!user) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

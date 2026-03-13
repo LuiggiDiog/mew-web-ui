@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { conversations, messages } from "@/db/schema";
-import { eq, and, asc } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
 import { isUuid } from "@/modules/shared/utils/uuid";
+import { listMessagesByConversationId } from "@/modules/chat/lib/messages-repository";
+import {
+  deleteConversationByIdForUser,
+  findConversationByIdForUser,
+  updateConversationTitleByIdForUser,
+} from "@/modules/conversations/lib/conversations-repository";
 
 type Params = { params: Promise<{ id: string }> };
 const MAX_TITLE_LENGTH = 200;
@@ -16,22 +19,13 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
   }
 
-  const [conversation] = await db
-    .select()
-    .from(conversations)
-    .where(
-      and(eq(conversations.id, id), eq(conversations.userId, session.userId))
-    );
+  const conversation = await findConversationByIdForUser(session.userId, id);
 
   if (!conversation) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const msgs = await db
-    .select()
-    .from(messages)
-    .where(eq(messages.conversationId, id))
-    .orderBy(asc(messages.createdAt));
+  const msgs = await listMessagesByConversationId(id, { order: "asc" });
 
   return NextResponse.json({ conversation, messages: msgs });
 }
@@ -44,12 +38,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
   }
 
-  const [deleted] = await db
-    .delete(conversations)
-    .where(
-      and(eq(conversations.id, id), eq(conversations.userId, session.userId))
-    )
-    .returning();
+  const deleted = await deleteConversationByIdForUser(session.userId, id);
 
   if (!deleted) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -82,13 +71,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     );
   }
 
-  const [updated] = await db
-    .update(conversations)
-    .set({ title, updatedAt: new Date() })
-    .where(
-      and(eq(conversations.id, id), eq(conversations.userId, session.userId))
-    )
-    .returning();
+  const updated = await updateConversationTitleByIdForUser(
+    session.userId,
+    id,
+    title
+  );
 
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { db } from "@/db";
-import { conversations, messages, settings } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
 import { getApiSession } from "@/modules/auth/lib/api-auth";
+import {
+  createMessage,
+  updateMessageContentByIdInConversation,
+} from "@/modules/chat/lib/messages-repository";
+import {
+  createConversation,
+  findConversationByIdForUser,
+  updateConversationPreviewByIdForUser,
+} from "@/modules/conversations/lib/conversations-repository";
 import { ComfyUIClient } from "@/modules/providers/lib/comfyui";
 import { OllamaClient } from "@/modules/providers/lib/ollama";
+import { getSettingsMapByUserId } from "@/modules/settings/lib/settings-repository";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
 import { env } from "@/env";
@@ -128,37 +135,25 @@ export async function POST(request: NextRequest) {
   let convId = conversationId;
 
   if (convId) {
-    const [conversation] = await db
-      .select()
-      .from(conversations)
-      .where(
-        and(
-          eq(conversations.id, convId),
-          eq(conversations.userId, session.userId),
-        ),
-      );
+    const conversation = await findConversationByIdForUser(session.userId, convId);
 
     if (!conversation) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
   } else {
     const title = inputPrompt.slice(0, 60);
-
-    const [newConv] = await db
-      .insert(conversations)
-      .values({
-        userId: session.userId,
-        title,
-        model: COMFYUI_MODEL_LABEL,
-        provider: "comfyui",
-      })
-      .returning();
+    const newConv = await createConversation({
+      userId: session.userId,
+      title,
+      model: COMFYUI_MODEL_LABEL,
+      provider: "comfyui",
+    });
 
     convId = newConv.id;
   }
 
   if (!skipUserMessage) {
-    await db.insert(messages).values({
+    await createMessage({
       conversationId: convId,
       role: "user",
       content: inputPrompt,
@@ -168,14 +163,7 @@ export async function POST(request: NextRequest) {
 
   let finalPrompt = inputPrompt;
 
-  const userSettings = await db
-    .select()
-    .from(settings)
-    .where(eq(settings.userId, session.userId));
-
-  const settingsMap = Object.fromEntries(
-    userSettings.map((s) => [s.key, s.value]),
-  );
+  const settingsMap = await getSettingsMapByUserId(session.userId);
 
   console.log("settingsMap.enhancePrompt:", settingsMap.enhancePrompt);
 
@@ -261,12 +249,9 @@ export async function POST(request: NextRequest) {
     : `/generated/${filename}`;
 
   if (replaceMessageId && isUuid(replaceMessageId)) {
-    await db
-      .update(messages)
-      .set({ content: imageUrl })
-      .where(and(eq(messages.id, replaceMessageId), eq(messages.conversationId, convId!)));
+    await updateMessageContentByIdInConversation(replaceMessageId, convId!, imageUrl);
   } else {
-    await db.insert(messages).values({
+    await createMessage({
       conversationId: convId,
       role: "assistant",
       content: imageUrl,
@@ -275,15 +260,11 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  await db
-    .update(conversations)
-    .set({ preview: "[Image generated]", updatedAt: new Date() })
-    .where(
-      and(
-        eq(conversations.id, convId),
-        eq(conversations.userId, session.userId),
-      ),
-    );
+  await updateConversationPreviewByIdForUser(
+    session.userId,
+    convId,
+    "[Image generated]"
+  );
 
   return NextResponse.json({ imageUrl, conversationId: convId, seed: usedSeed, fullWidth: imgWidth, fullHeight: imgHeight });
 }
