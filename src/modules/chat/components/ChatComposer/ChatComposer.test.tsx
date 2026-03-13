@@ -142,7 +142,7 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a cat", 1024, 1024);
+    expect(onSendImage).toHaveBeenCalledWith("a cat", 1024, 1024, undefined, undefined);
     expect(onSend).not.toHaveBeenCalled();
   });
 
@@ -160,7 +160,7 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a castle", 1024, 576);
+    expect(onSendImage).toHaveBeenCalledWith("a castle", 1024, 576, undefined, undefined);
   });
 
   it("sends 9:16 image when 9:16 preset is selected", async () => {
@@ -177,7 +177,7 @@ describe("ChatComposer image mode", () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
     });
 
-    expect(onSendImage).toHaveBeenCalledWith("a tree", 576, 1024);
+    expect(onSendImage).toHaveBeenCalledWith("a tree", 576, 1024, undefined, undefined);
   });
 
   it("shows aspect ratio preset buttons only in image mode", () => {
