@@ -208,6 +208,6 @@ describe("POST /api/chat/regenerate", () => {
     expect(res.status).toBe(200);
 
     await res.text();
-    expect(mockChat).toHaveBeenCalledWith([], "mistral");
+    expect(mockChat).toHaveBeenCalledWith([], "mistral", expect.any(AbortSignal));
   });
 });

@@ -215,7 +215,8 @@ describe("POST /api/chat", () => {
         { role: "user", content: "Question" },
         { role: "assistant", content: "Answer" },
       ],
-      "llama3.2"
+      "llama3.2",
+      expect.any(AbortSignal)
     );
   });
 });

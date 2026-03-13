@@ -234,7 +234,8 @@ describe("POST /api/chat/edit", () => {
         { role: "assistant", content: "Answer 1" },
         { role: "user", content: "Edited question" },
       ],
-      "llama3.2"
+      "llama3.2",
+      expect.any(AbortSignal)
     );
   });
 
@@ -260,7 +261,8 @@ describe("POST /api/chat/edit", () => {
     await res.text();
     expect(mockChat).toHaveBeenCalledWith(
       [{ role: "user", content: "Edited question" }],
-      "mistral"
+      "mistral",
+      expect.any(AbortSignal)
     );
   });
 });

@@ -25,11 +25,13 @@ export class OllamaClient {
 
   async *chat(
     messages: { role: string; content: string }[],
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): AsyncGenerator<string> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal,
       body: JSON.stringify({ model, messages, stream: true }),
     });
 

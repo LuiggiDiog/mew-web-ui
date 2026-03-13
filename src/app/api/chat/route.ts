@@ -11,6 +11,10 @@ const MAX_MESSAGE_LENGTH = 20_000;
 const MAX_MODEL_LENGTH = 200;
 const MAX_PROVIDER_LENGTH = 100;
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 export async function POST(request: NextRequest) {
   const { session, error } = await getApiSession();
   if (error) return error;
@@ -114,12 +118,25 @@ export async function POST(request: NextRequest) {
       let assistantContent = "";
 
       try {
-        for await (const chunk of ollamaClient.chat(context, model)) {
+        for await (const chunk of ollamaClient.chat(context, model, request.signal)) {
+          if (request.signal.aborted) {
+            controller.close();
+            return;
+          }
           assistantContent += chunk;
           controller.enqueue(encoder.encode(chunk));
         }
       } catch (e) {
+        if (request.signal.aborted || isAbortError(e)) {
+          controller.close();
+          return;
+        }
         controller.error(e);
+        return;
+      }
+
+      if (request.signal.aborted) {
+        controller.close();
         return;
       }
 

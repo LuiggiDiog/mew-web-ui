@@ -3,6 +3,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChatComposer } from "./ChatComposer";
 
+vi.mock("@/modules/chat/components/ModelSelector", () => ({
+  ModelSelector: () => <div aria-label="Select model" />,
+}));
+
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.stubGlobal(
@@ -209,5 +213,18 @@ describe("ChatComposer image mode", () => {
 
     expect(onSend).toHaveBeenCalledWith("plain text");
     expect(onSendImage).not.toHaveBeenCalled();
+  });
+
+  it("shows stop button while streaming", () => {
+    render(<ChatComposer streaming onStop={vi.fn()} disabled />);
+    expect(screen.getByRole("button", { name: "Stop generation" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Send message" })).toBeNull();
+  });
+
+  it("calls onStop when stop button is clicked", () => {
+    const onStop = vi.fn();
+    render(<ChatComposer streaming onStop={onStop} disabled />);
+    fireEvent.click(screen.getByRole("button", { name: "Stop generation" }));
+    expect(onStop).toHaveBeenCalledOnce();
   });
 });

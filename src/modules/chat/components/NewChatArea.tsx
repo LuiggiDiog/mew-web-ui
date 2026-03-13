@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/modules/chat/components/EmptyState";
 import { MessageList } from "@/modules/chat/components/MessageList";
@@ -12,11 +12,20 @@ interface NewChatAreaProps {
   welcomeSeed?: number;
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
   const router = useRouter();
   const { activeModel, activeProvider, setStreamingMessageId } = useChatStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const requestAbortRef = useRef<AbortController | null>(null);
+
+  const handleStop = useCallback(() => {
+    requestAbortRef.current?.abort();
+  }, []);
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -43,11 +52,14 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
       setMessages([userMsg, assistantMsg]);
       setStreaming(true);
       setStreamingMessageId(assistantId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
 
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             message: text,
             model: activeModel,
@@ -83,13 +95,17 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
         if (newConvId) {
           router.push(`/chat/${newConvId}`);
         }
-      } catch {
+      } catch (error) {
+        if (isAbortError(error)) return;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: "Error: request failed." } : m
           )
         );
       } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
         setStreaming(false);
         setStreamingMessageId(null);
       }
@@ -124,11 +140,14 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
       setMessages([userMsg, assistantMsg]);
       setStreaming(true);
       setStreamingMessageId(assistantId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
 
       try {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({ prompt, size }),
         });
 
@@ -142,7 +161,8 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
         if (newConvId) {
           router.push(`/chat/${newConvId}`);
         }
-      } catch {
+      } catch (error) {
+        if (isAbortError(error)) return;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
@@ -151,6 +171,9 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
           )
         );
       } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
         setStreaming(false);
         setStreamingMessageId(null);
       }
@@ -169,7 +192,13 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
           </div>
         )}
       </main>
-      <ChatComposer onSend={handleSend} onSendImage={handleSendImage} disabled={streaming} />
+      <ChatComposer
+        onSend={handleSend}
+        onSendImage={handleSendImage}
+        onStop={handleStop}
+        disabled={streaming}
+        streaming={streaming}
+      />
     </>
   );
 }

@@ -180,6 +180,45 @@ describe("ChatArea", () => {
       expect(mockRefresh).toHaveBeenCalled();
     });
   });
+
+  it("stops streaming when stop generation is clicked", async () => {
+    const mockFetch = vi.fn((url: string, options?: RequestInit) => {
+      if (url.includes("ollama/models") || url.includes("/api/settings")) {
+        return Promise.resolve({ ok: false, json: () => Promise.resolve(null) });
+      }
+      if (url.includes("/api/chat")) {
+        return new Promise((_, reject) => {
+          const signal = options?.signal;
+          signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"));
+          });
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await act(async () => render(<ChatArea conversationId="conv-1" initialMessages={[]} />));
+
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText(/Message/i), {
+        target: { value: "Stop this generation" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Stop generation" })).toBeTruthy();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Stop generation" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Stop generation" })).toBeNull();
+    });
+  });
 });
 
 describe("ChatArea - regenerate", () => {

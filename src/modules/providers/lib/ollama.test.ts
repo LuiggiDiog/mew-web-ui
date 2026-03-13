@@ -144,4 +144,25 @@ describe("OllamaClient.chat", () => {
       })
     );
   });
+
+  it("forwards abort signal to fetch", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body: new ReadableStream({ start(c) { c.close(); } }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const client = makeClient();
+    const controller = new AbortController();
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for await (const _ of client.chat([{ role: "user", content: "test" }], "llama3.2:latest", controller.signal)) { /* noop */ }
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE_URL}/api/chat`,
+      expect.objectContaining({
+        signal: controller.signal,
+      })
+    );
+  });
 });

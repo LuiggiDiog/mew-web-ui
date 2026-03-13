@@ -2,19 +2,23 @@
 
 import { useState, useRef, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
-import { SendIcon, ImageIcon } from "@/modules/shared/components/icons";
+import { SendIcon, ImageIcon, StopIcon } from "@/modules/shared/components/icons";
 import { ModelSelector } from "@/modules/chat/components/ModelSelector";
 
 interface ChatComposerProps {
   onSend?: (text: string) => void;
   onSendImage?: (prompt: string, size: "small" | "large") => void;
+  onStop?: () => void;
   disabled?: boolean;
+  streaming?: boolean;
 }
 
 export function ChatComposer({
   onSend,
   onSendImage,
+  onStop,
   disabled = false,
+  streaming = false,
 }: ChatComposerProps) {
   const [value, setValue] = useState("");
   const [imageMode, setImageMode] = useState(false);
@@ -99,19 +103,37 @@ export function ChatComposer({
               "min-h-6 max-h-40"
             )}
           />
-          <button
-            onClick={handleSend}
-            disabled={!value.trim() || disabled}
-            className={cn(
-              "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
-              value.trim() && !disabled
-                ? "text-accent hover:bg-accent/10"
-                : "text-text-secondary opacity-40 cursor-not-allowed"
-            )}
-            aria-label="Send message"
-          >
-            <SendIcon />
-          </button>
+          {streaming ? (
+            <button
+              type="button"
+              onClick={onStop}
+              disabled={!onStop}
+              title="Stop generation"
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors shrink-0 outline-none",
+                onStop
+                  ? "text-text-secondary bg-surface-elevated hover:text-text-primary hover:bg-border/40"
+                  : "text-text-secondary opacity-40 cursor-not-allowed"
+              )}
+              aria-label="Stop generation"
+            >
+              <StopIcon className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!value.trim() || disabled}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors shrink-0 outline-none",
+                value.trim() && !disabled
+                  ? "text-accent hover:bg-accent/10"
+                  : "text-text-secondary opacity-40 cursor-not-allowed"
+              )}
+              aria-label="Send message"
+            >
+              <SendIcon />
+            </button>
+          )}
         </div>
 
         {imageMode ? (
@@ -158,4 +180,3 @@ export function ChatComposer({
     </div>
   );
 }
-

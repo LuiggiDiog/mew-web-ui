@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { MessageList } from "@/modules/chat/components/MessageList";
 import { ChatComposer } from "@/modules/chat/components/ChatComposer";
@@ -12,10 +12,15 @@ interface ChatAreaProps {
   initialMessages: Message[];
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 async function readStream(
   res: Response,
   messageId: string,
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
+  signal?: AbortSignal
 ): Promise<boolean> {
   if (!res.ok || !res.body) {
     setMessages((prev) =>
@@ -31,6 +36,7 @@ async function readStream(
   let accumulated = "";
 
   while (true) {
+    if (signal?.aborted) return false;
     const { done, value } = await reader.read();
     if (done) break;
     accumulated += decoder.decode(value, { stream: true });
@@ -49,6 +55,11 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   const { activeModel, activeProvider, setStreamingMessageId } = useChatStore();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [streaming, setStreaming] = useState(false);
+  const requestAbortRef = useRef<AbortController | null>(null);
+
+  const handleStop = useCallback(() => {
+    requestAbortRef.current?.abort();
+  }, []);
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -75,11 +86,14 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
       setStreamingMessageId(assistantId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
 
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             message: text,
             model: activeModel,
@@ -88,15 +102,19 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           }),
         });
 
-        const ok = await readStream(res, assistantId, setMessages);
+        const ok = await readStream(res, assistantId, setMessages, abortController.signal);
         if (ok) router.refresh();
-      } catch {
+      } catch (error) {
+        if (isAbortError(error)) return;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: "Error: request failed." } : m
           )
         );
       } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
         setStreaming(false);
         setStreamingMessageId(null);
       }
@@ -119,26 +137,33 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
     );
     setStreaming(true);
     setStreamingMessageId(targetId);
+    const abortController = new AbortController();
+    requestAbortRef.current = abortController;
 
     try {
       const res = await fetch("/api/chat/regenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: abortController.signal,
         body: JSON.stringify({
           conversationId,
           model: activeModel,
         }),
       });
 
-      const ok = await readStream(res, targetId, setMessages);
+      const ok = await readStream(res, targetId, setMessages, abortController.signal);
       if (ok) router.refresh();
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) return;
       setMessages((prev) =>
         prev.map((m) =>
           m.id === targetId ? { ...m, content: "Error: request failed." } : m
         )
       );
     } finally {
+      if (requestAbortRef.current === abortController) {
+        requestAbortRef.current = null;
+      }
       setStreaming(false);
       setStreamingMessageId(null);
     }
@@ -174,11 +199,14 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
       });
       setStreaming(true);
       setStreamingMessageId(assistantId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
 
       try {
         const res = await fetch("/api/chat/edit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             conversationId,
             messageId,
@@ -187,15 +215,19 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           }),
         });
 
-        const ok = await readStream(res, assistantId, setMessages);
+        const ok = await readStream(res, assistantId, setMessages, abortController.signal);
         if (ok) router.refresh();
-      } catch {
+      } catch (error) {
+        if (isAbortError(error)) return;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: "Error: request failed." } : m
           )
         );
       } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
         setStreaming(false);
         setStreamingMessageId(null);
       }
@@ -230,11 +262,14 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setStreaming(true);
       setStreamingMessageId(assistantId);
+      const abortController = new AbortController();
+      requestAbortRef.current = abortController;
 
       try {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({ prompt, conversationId, size }),
         });
 
@@ -245,7 +280,8 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           prev.map((m) => (m.id === assistantId ? { ...m, content: imageUrl } : m))
         );
         router.refresh();
-      } catch {
+      } catch (error) {
+        if (isAbortError(error)) return;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
@@ -254,6 +290,9 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           )
         );
       } finally {
+        if (requestAbortRef.current === abortController) {
+          requestAbortRef.current = null;
+        }
         setStreaming(false);
         setStreamingMessageId(null);
       }
@@ -284,7 +323,13 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           )}
         </div>
       </main>
-      <ChatComposer onSend={handleSend} onSendImage={handleSendImage} disabled={streaming} />
+      <ChatComposer
+        onSend={handleSend}
+        onSendImage={handleSendImage}
+        onStop={handleStop}
+        disabled={streaming}
+        streaming={streaming}
+      />
     </>
   );
 }

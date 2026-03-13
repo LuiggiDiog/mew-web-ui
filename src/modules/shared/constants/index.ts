@@ -1,7 +1,8 @@
 export const APP_NAME = "Mew WebUI";
 
 export const DEFAULT_PROVIDER = "ollama";
-export const DEFAULT_MODEL = "llama3.2";
+export const DEFAULT_MODEL =
+  "hf.co/mradermacher/Dolphin-Mistral-24B-Venice-Edition-GGUF:Q4_K_M";
 
 export const QUICK_ACTIONS = [
   { id: "explain", label: "Explain something", prompt: "Explain " },
