@@ -6,9 +6,11 @@ import { useChatStore } from "@/modules/chat/store/chatStore";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "@/modules/shared/constants";
 
 const mockPush = vi.fn();
+const mockRefresh = vi.fn();
+const mockRouter = { push: mockPush, refresh: mockRefresh };
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: vi.fn() }),
+  useRouter: () => mockRouter,
   usePathname: () => "/chat",
 }));
 

@@ -5,15 +5,17 @@ import { LoginCard } from ".";
 
 const mockPush = vi.fn();
 const mockRefresh = vi.fn();
+const mockSearchParamGet = vi.fn(() => null);
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
-  useSearchParams: () => ({ get: () => null }),
+  useSearchParams: () => ({ get: mockSearchParamGet }),
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.restoreAllMocks();
+  mockSearchParamGet.mockImplementation(() => null);
 });
 
 function fillForm(email = "user@example.com", password = "secret123") {
@@ -141,5 +143,13 @@ describe("LoginCard", () => {
     await waitFor(() => {
       expect(screen.getByText("Something went wrong. Try again.")).toBeTruthy();
     });
+  });
+
+  it("shows reauth message when reauth query param is present", () => {
+    mockSearchParamGet.mockImplementation((key: string) => (key === "reauth" ? "1" : null));
+    render(<LoginCard />);
+    expect(
+      screen.getByText("Your previous session is no longer valid. Please sign in again.")
+    ).toBeTruthy();
   });
 });

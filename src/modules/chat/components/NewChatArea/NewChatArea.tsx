@@ -68,6 +68,12 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
           }),
         });
 
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
+
         if (!res.ok || !res.body) {
           setMessages((prev) =>
             prev.map((m) =>
@@ -158,6 +164,12 @@ export function NewChatArea({ welcomeSeed = 0 }: NewChatAreaProps) {
             ...(referenceImage ? { referenceImage, denoise } : {}),
           }),
         });
+
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
         const { imageUrl, conversationId: newConvId } = await res.json();

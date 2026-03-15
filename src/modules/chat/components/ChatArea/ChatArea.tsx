@@ -103,6 +103,12 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           }),
         });
 
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
+
         const ok = await readStream(res, assistantId, setMessages, abortController.signal);
         if (ok) router.refresh();
       } catch (error) {
@@ -151,6 +157,12 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           model: activeModel,
         }),
       });
+
+      if (res.status === 401) {
+        router.push("/login?reauth=1");
+        router.refresh();
+        return;
+      }
 
       const ok = await readStream(res, targetId, setMessages, abortController.signal);
       if (ok) router.refresh();
@@ -215,6 +227,12 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
             model: activeModel,
           }),
         });
+
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
 
         const ok = await readStream(res, assistantId, setMessages, abortController.signal);
         if (ok) router.refresh();
@@ -286,6 +304,12 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           }),
         });
 
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
+
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
         const { imageUrl } = await res.json();
 
@@ -352,6 +376,12 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
             replaceMessageId: messageId,
           }),
         });
+
+        if (res.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return;
+        }
 
         if (!res.ok) throw new Error(`Image generation failed: ${res.status}`);
         const { imageUrl } = await res.json();

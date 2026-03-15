@@ -5,6 +5,7 @@ import { sessionOptions } from "@/modules/auth/services/session-config";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isReauthRequest = request.nextUrl.searchParams.get("reauth") === "1";
   const cookieName = (sessionOptions.cookieName as string) ?? "workspace_session";
 
   const isPrivate =
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isPublic && userId) {
+  if (isPublic && userId && !isReauthRequest) {
     return NextResponse.redirect(new URL("/chat", request.url));
   }
 

@@ -36,6 +36,11 @@ export function ConversationDrawer() {
     setLoading(true);
     try {
       const res = await fetch("/api/conversations");
+      if (res.status === 401) {
+        router.push("/login?reauth=1");
+        router.refresh();
+        return;
+      }
       const data = await res.json();
       if (data.conversations) setConversations(data.conversations);
     } catch {
@@ -43,7 +48,7 @@ export function ConversationDrawer() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     void loadConversations();
@@ -51,10 +56,17 @@ export function ConversationDrawer() {
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((data) => { if (data.user) setUser(data.user); })
+      .then((r) => {
+        if (r.status === 401) {
+          router.push("/login?reauth=1");
+          router.refresh();
+          return null;
+        }
+        return r.json();
+      })
+      .then((data) => { if (data?.user) setUser(data.user); })
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -82,6 +94,11 @@ export function ConversationDrawer() {
   const handleDeleteConversation = async (id: string) => {
     try {
       const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (res.status === 401) {
+        router.push("/login?reauth=1");
+        router.refresh();
+        return;
+      }
       if (!res.ok) {
         toast.error({ title: "Could not delete chat" });
         return;

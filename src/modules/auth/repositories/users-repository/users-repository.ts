@@ -16,6 +16,12 @@ export async function findUserByEmail(email: string): Promise<UserRecord | undef
   });
 }
 
+export async function findUserById(id: string): Promise<UserRecord | undefined> {
+  return db.query.users.findFirst({
+    where: eq(users.id, id),
+  });
+}
+
 export async function createGoogleUser(
   input: CreateGoogleUserInput
 ): Promise<UserRecord> {

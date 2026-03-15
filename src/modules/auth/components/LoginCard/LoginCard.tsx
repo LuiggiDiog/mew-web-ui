@@ -20,6 +20,7 @@ export function LoginCard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthError = searchParams.get("error");
+  const needsReauth = searchParams.get("reauth") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -92,6 +93,12 @@ export function LoginCard() {
       <p className="mb-3 text-center text-xs text-text-secondary">
         Manual account access (database-created users only)
       </p>
+
+      {needsReauth && (
+        <p className="mb-3 text-sm text-error text-center">
+          Your previous session is no longer valid. Please sign in again.
+        </p>
+      )}
 
       <form className="space-y-4" onSubmit={handleSubmit} aria-label="Login form">
         <div className="space-y-1.5">
