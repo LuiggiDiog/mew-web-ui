@@ -1,60 +1,65 @@
 /**
- * Seed script — creates the first user + default providers + default settings.
+ * Seed script - backfills default providers/settings for an existing user.
+ *
+ * This script no longer creates the first user. The first admin user must be
+ * created through the in-app bootstrap flow when the database is empty.
  *
  * Usage:
- *   SEED_EMAIL=me@example.com SEED_PASSWORD=secret SEED_DISPLAY_NAME="Your Name" npm run db:seed
- *
- * Or set these in .env.local and run: npm run db:seed
+ *   SEED_EMAIL=me@example.com npm run db:seed
  */
 
 // env loaded via --env-file flag (see package.json db:seed script)
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { eq } from "drizzle-orm";
 import * as schema from "./schema";
-import bcrypt from "bcryptjs";
 import { env } from "@/env";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
 
 const email = env.seedEmail;
-const password = env.seedPassword;
-const displayName = env.seedDisplayName;
 const ollamaUrl = env.ollamaBaseUrl;
 
 async function seed() {
   const client = postgres(env.databaseUrl);
   const db = drizzle(client, { schema });
 
-  console.log("Seeding database...");
+  console.log("Seeding defaults for existing user...");
 
-  // Create user
-  const passwordHash = await bcrypt.hash(password, 12);
-  const [user] = await db
-    .insert(schema.users)
-    .values({ email, displayName, passwordHash, authProvider: "local" })
-    .onConflictDoNothing()
-    .returning();
+  const user = await db.query.users.findFirst({
+    where: eq(schema.users.email, email),
+  });
 
   if (!user) {
-    console.log(`User ${email} already exists. Skipping.`);
+    console.log(`No user found for ${email}.`);
+    console.log("Create the first admin from /login bootstrap flow, then rerun seed if needed.");
     await client.end();
     return;
   }
 
-  console.log(`Created user: ${email}`);
+  await db
+    .insert(schema.providers)
+    .values({
+      id: "ollama",
+      userId: user.id,
+      name: "Ollama",
+      type: "local",
+      baseUrl: ollamaUrl,
+      isActive: true,
+      defaultModel: DEFAULT_MODEL,
+    })
+    .onConflictDoUpdate({
+      target: schema.providers.id,
+      set: {
+        userId: user.id,
+        name: "Ollama",
+        type: "local",
+        baseUrl: ollamaUrl,
+        isActive: true,
+        defaultModel: DEFAULT_MODEL,
+        updatedAt: new Date(),
+      },
+    });
 
-  // Create default Ollama provider
-  await db.insert(schema.providers).values({
-    id: "ollama",
-    userId: user.id,
-    name: "Ollama",
-    type: "local",
-    baseUrl: ollamaUrl,
-    isActive: true,
-    defaultModel: DEFAULT_MODEL,
-  });
-  console.log("Created Ollama provider");
-
-  // Create default settings
   const defaultSettings = [
     { key: "saveHistory", value: "true" },
     { key: "darkMode", value: "true" },
@@ -62,14 +67,17 @@ async function seed() {
     { key: "defaultModel", value: DEFAULT_MODEL },
   ];
 
-  await db.insert(schema.settings).values(
-    defaultSettings.map((s) => ({ userId: user.id, ...s }))
-  );
-  console.log("Created default settings");
+  for (const setting of defaultSettings) {
+    await db
+      .insert(schema.settings)
+      .values({ userId: user.id, key: setting.key, value: setting.value })
+      .onConflictDoUpdate({
+        target: [schema.settings.userId, schema.settings.key],
+        set: { value: setting.value, updatedAt: new Date() },
+      });
+  }
 
-  console.log("\nSeed complete!");
-  console.log(`Email:    ${email}`);
-  console.log(`Password: ${password}`);
+  console.log(`Defaults ready for user: ${email}`);
 
   await client.end();
 }

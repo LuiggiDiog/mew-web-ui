@@ -4,7 +4,12 @@ vi.mock("@/modules/auth/services/session", () => ({
   getSession: vi.fn(),
 }));
 
+vi.mock("@/modules/auth/services/bootstrap", () => ({
+  isBootstrapRequired: vi.fn().mockResolvedValue(false),
+}));
+
 import { getSession } from "@/modules/auth/services/session";
+import { isBootstrapRequired } from "@/modules/auth/services/bootstrap";
 import { GET } from "./route";
 import { setEnv } from "@/env";
 
@@ -19,12 +24,22 @@ beforeEach(() => {
   mockSession.oauthState = undefined;
   mockSession.oauthRedirectUri = undefined;
   vi.mocked(getSession).mockResolvedValue(mockSession as never);
+  vi.mocked(isBootstrapRequired).mockResolvedValue(false);
   setEnv("GOOGLE_CLIENT_ID", "google-client-id");
   setEnv("GOOGLE_CLIENT_SECRET", "google-client-secret");
   setEnv("GOOGLE_REDIRECT_URI", "http://localhost:3000/api/auth/google/callback");
 });
 
 describe("GET /api/auth/google/start", () => {
+  it("redirects to login when bootstrap is required", async () => {
+    vi.mocked(isBootstrapRequired).mockResolvedValue(true);
+
+    const response = await GET(new Request("http://localhost:3000/api/auth/google/start"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/login?error=bootstrap_required");
+  });
+
   it("returns 503 when oauth is not configured", async () => {
     setEnv("GOOGLE_CLIENT_ID", "");
 

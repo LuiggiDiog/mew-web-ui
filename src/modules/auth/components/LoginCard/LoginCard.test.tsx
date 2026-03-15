@@ -152,4 +152,10 @@ describe("LoginCard", () => {
       screen.getByText("Your previous session is no longer valid. Please sign in again.")
     ).toBeTruthy();
   });
+
+  it("renders bootstrap mode when needsBootstrap is true", () => {
+    render(<LoginCard needsBootstrap />);
+    expect(screen.getByRole("heading", { name: "Create admin account" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
+  });
 });

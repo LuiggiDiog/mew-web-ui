@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getSession } from "@/modules/auth/services/session";
+import { isBootstrapRequired } from "@/modules/auth/services/bootstrap";
 import {
   buildGoogleAuthUrl,
   resolveGoogleRedirectUri,
@@ -8,9 +9,13 @@ import {
 } from "@/modules/auth/services/google-oauth";
 
 export async function GET(request: Request) {
+  const requestOrigin = resolveRequestOrigin(request);
+  if (await isBootstrapRequired()) {
+    return NextResponse.redirect(new URL("/login?error=bootstrap_required", requestOrigin));
+  }
+
   const session = await getSession();
   const state = randomUUID();
-  const requestOrigin = resolveRequestOrigin(request);
   const redirectUri = resolveGoogleRedirectUri(requestOrigin);
   const authUrl = buildGoogleAuthUrl(state, redirectUri);
 

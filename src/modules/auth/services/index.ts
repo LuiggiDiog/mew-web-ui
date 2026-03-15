@@ -1,5 +1,10 @@
 export { getApiSession } from "./api-auth";
 export {
+  BootstrapAlreadyCompletedError,
+  isBootstrapRequired,
+  registerInitialAdmin,
+} from "./bootstrap";
+export {
   buildGoogleAuthUrl,
   exchangeCodeForGoogleUser,
   resolveGoogleRedirectUri,

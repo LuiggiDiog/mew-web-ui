@@ -24,7 +24,8 @@ Mew WebUI is inspired by tools like Open WebUI, but with a sharper focus on:
 
 ## Features
 
-- Google OAuth for new users and email/password login for manually created DB users
+- First-run bootstrap flow to create the initial admin account when DB is empty
+- Google OAuth and email/password login after bootstrap
 - PostgreSQL + Drizzle ORM (users, conversations, messages, providers, settings)
 - Streaming chat with Ollama
 - Conversation persistence, message edit, and assistant regenerate
@@ -80,11 +81,10 @@ Copy-Item .env.example .env
 
 4. Update `.env` values (at minimum set a strong `SESSION_SECRET`).
 
-5. Run migrations and seed a manual user.
+5. Run migrations.
 ```bash
 npm run db:generate
 npm run db:migrate
-npm run db:seed
 ```
 
 6. Start Ollama (if using local models).
@@ -98,6 +98,7 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+If the database is empty, the login screen will show a one-time form to create the first admin user.
 
 ## Required environment variables
 
@@ -126,7 +127,7 @@ For Google OAuth:
 - `npm run test:coverage` - coverage report
 - `npm run db:generate` - generate Drizzle artifacts
 - `npm run db:migrate` - apply migrations
-- `npm run db:seed` - seed first manual user
+- `npm run db:seed` - backfill default provider/settings for an existing user
 - `npm run db:studio` - open Drizzle Studio
 
 ## Privacy and security notes

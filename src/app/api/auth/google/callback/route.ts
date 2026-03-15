@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/modules/auth/services/session";
+import { isBootstrapRequired } from "@/modules/auth/services/bootstrap";
 import {
   exchangeCodeForGoogleUser,
   resolveGoogleRedirectUri,
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
   const profile = await exchangeCodeForGoogleUser(code, redirectUri);
   if (!profile) return redirectWithError(request, "oauth_exchange");
   if (!profile.email_verified) return redirectWithError(request, "oauth_email_unverified");
+  if (await isBootstrapRequired()) return redirectWithError(request, "bootstrap_required");
 
   const normalizedEmail = profile.email.trim().toLowerCase();
   const existingUser = await findUserByEmail(normalizedEmail);
