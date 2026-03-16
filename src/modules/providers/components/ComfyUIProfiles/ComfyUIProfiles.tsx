@@ -13,6 +13,8 @@ import {
 } from "@/modules/shared/components/icons";
 import { cn } from "@/modules/shared/utils/cn";
 import { ENHANCE_SYSTEM_PROMPT, ENHANCE_IMG2IMG_SYSTEM_PROMPT, Z_IMAGE_TURBO_PLACEHOLDERS } from "@/modules/providers/services/comfyui";
+import { EasyProfileWizard } from "@/modules/providers/components/EasyProfileWizard";
+import type { AdvancedPrefill } from "@/modules/providers/components/EasyProfileWizard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,13 +67,26 @@ function defaultForm(profile?: ProfileRow): FormState {
 
 interface ProfileFormProps {
   initial?: ProfileRow;
+  initialPrefill?: AdvancedPrefill | null;
   onSave: (form: FormState) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
 }
 
-function ProfileForm({ initial, onSave, onCancel, saving }: ProfileFormProps) {
-  const [form, setForm] = useState<FormState>(() => defaultForm(initial));
+function ProfileForm({ initial, initialPrefill, onSave, onCancel, saving }: ProfileFormProps) {
+  const [form, setForm] = useState<FormState>(() => {
+    const base = defaultForm(initial);
+    if (!initial && initialPrefill) {
+      return {
+        ...base,
+        baseUrl: initialPrefill.baseUrl,
+        workflowJson: initialPrefill.workflowJson,
+        outputNodeId: initialPrefill.outputNodeId,
+        placeholders: initialPrefill.placeholders,
+      };
+    }
+    return base;
+  });
   const [error, setError] = useState<string | null>(null);
   const [showImg2Img, setShowImg2Img] = useState(
     !!(initial?.img2imgWorkflowJson)
@@ -322,6 +337,8 @@ export function ComfyUIProfiles() {
   const [connectionStatus, setConnectionStatus] = useState<Record<string, "idle" | "checking" | "ok" | "fail">>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [creatingEasy, setCreatingEasy] = useState(false);
+  const [advancedPrefill, setAdvancedPrefill] = useState<AdvancedPrefill | null>(null);
   const [saving, setSaving] = useState(false);
   const importFileRef = useRef<HTMLInputElement>(null);
 
@@ -464,11 +481,19 @@ export function ComfyUIProfiles() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { setCreating(true); setEditingId(null); }}
+          onClick={() => { setCreatingEasy(true); setCreating(false); setEditingId(null); setAdvancedPrefill(null); }}
+          className="gap-1.5"
+        >
+          Quick Setup
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => { setCreating(true); setCreatingEasy(false); setEditingId(null); setAdvancedPrefill(null); }}
           className="gap-1.5"
         >
           <PlusIcon className="w-3.5 h-3.5" />
-          Add profile
+          Advanced
         </Button>
         <Button
           variant="ghost"
@@ -479,12 +504,28 @@ export function ComfyUIProfiles() {
         </Button>
       </div>
 
-      {/* Create form */}
+      {/* Easy Setup wizard */}
+      {creatingEasy && (
+        <div className="border-b border-border/30">
+          <EasyProfileWizard
+            onDone={async () => { setCreatingEasy(false); await loadProfiles(); }}
+            onCancel={() => setCreatingEasy(false)}
+            onSwitchToAdvanced={(prefill) => {
+              setCreatingEasy(false);
+              setAdvancedPrefill(prefill);
+              setCreating(true);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Create form (Advanced) */}
       {creating && (
         <div className="border-b border-border/30">
           <ProfileForm
+            initialPrefill={advancedPrefill}
             onSave={handleCreate}
-            onCancel={() => setCreating(false)}
+            onCancel={() => { setCreating(false); setAdvancedPrefill(null); }}
             saving={saving}
           />
         </div>
