@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { cn } from "@/modules/shared/utils/cn";
 import { SendIcon, ImageIcon, StopIcon, AttachIcon, XIcon } from "@/modules/shared/components/icons";
 import { ModelSelector } from "@/modules/chat/components/ModelSelector";
+import { ImageProfileSelector } from "@/modules/chat/components/ImageProfileSelector";
 import { useChatStore } from "@/modules/chat/store/chatStore";
 
 type ImagePreset = {
@@ -335,13 +336,16 @@ export function ChatComposer({
               </div>
             )}
 
-            <p className="text-center text-xs text-text-secondary mt-1.5">
-              {referenceImage
-                ? `img2img · strength ${imageDenoise.toFixed(2)} · ${activePreset.width}×${activePreset.height}`
-                : previewMode
-                  ? `${previewWidth}×${previewHeight} preview → ${activePreset.width}×${activePreset.height} · ComfyUI`
-                  : `${activePreset.width}×${activePreset.height} · ComfyUI`}
-            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-1.5">
+              <p className="text-xs text-text-secondary">
+                {referenceImage
+                  ? `img2img · strength ${imageDenoise.toFixed(2)} · ${activePreset.width}×${activePreset.height} ·`
+                  : previewMode
+                    ? `${previewWidth}×${previewHeight} → ${activePreset.width}×${activePreset.height} ·`
+                    : `${activePreset.width}×${activePreset.height} ·`}
+              </p>
+              <ImageProfileSelector />
+            </div>
           </div>
         ) : (
           <p className="text-center text-xs text-text-secondary mt-2">

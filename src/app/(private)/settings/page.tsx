@@ -3,6 +3,7 @@ import { SettingsSection } from "@/modules/settings/components/SettingsSection";
 import { SettingsToggle } from "@/modules/settings/components/SettingsToggle";
 import { DefaultModelPicker } from "@/modules/settings/components/DefaultModelPicker";
 import { ProvidersList } from "@/modules/settings/components/ProvidersList";
+import { ComfyUIProfiles } from "@/modules/providers/components/ComfyUIProfiles";
 import { getSession } from "@/modules/auth/services/session";
 import { getSettingsMapByUserId } from "@/modules/settings/repositories/settings-repository";
 
@@ -58,6 +59,8 @@ export default async function SettingsPage() {
               settingKey="enhancePrompt"
             />
           </SettingsSection>
+
+          <ComfyUIProfiles />
 
           <ProvidersList />
         </div>

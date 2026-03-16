@@ -15,6 +15,15 @@ import { eq } from "drizzle-orm";
 import * as schema from "./schema";
 import { env } from "@/env";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
+import {
+  ENHANCE_SYSTEM_PROMPT,
+  ENHANCE_IMG2IMG_SYSTEM_PROMPT,
+  buildZImageTurboWorkflow,
+  buildZImageTurboImg2ImgWorkflow,
+  Z_IMAGE_TURBO_PLACEHOLDERS,
+  Z_IMAGE_TURBO_IMG2IMG_PLACEHOLDERS,
+  Z_IMAGE_TURBO_OUTPUT_NODE,
+} from "@/modules/providers/services/comfyui";
 
 const email = env.seedEmail;
 const ollamaUrl = env.ollamaBaseUrl;
@@ -75,6 +84,30 @@ async function seed() {
         target: [schema.settings.userId, schema.settings.key],
         set: { value: setting.value, updatedAt: new Date() },
       });
+  }
+
+  // Default Z-Image Turbo profile — only insert if user has no profiles yet
+  const existingProfile = await db.query.comfyuiProfiles.findFirst({
+    where: eq(schema.comfyuiProfiles.userId, user.id),
+  });
+
+  if (!existingProfile) {
+    await db.insert(schema.comfyuiProfiles).values({
+      userId: user.id,
+      name: "Z-Image Turbo",
+      baseUrl: env.comfyuiBaseUrl,
+      workflowJson: buildZImageTurboWorkflow(),
+      img2imgWorkflowJson: buildZImageTurboImg2ImgWorkflow(),
+      outputNodeId: Z_IMAGE_TURBO_OUTPUT_NODE,
+      placeholders: Z_IMAGE_TURBO_PLACEHOLDERS,
+      img2imgPlaceholders: Z_IMAGE_TURBO_IMG2IMG_PLACEHOLDERS,
+      enhanceSystemPrompt: ENHANCE_SYSTEM_PROMPT,
+      enhanceImg2ImgSystemPrompt: ENHANCE_IMG2IMG_SYSTEM_PROMPT,
+      isDefault: true,
+    });
+    console.log("Default ComfyUI profile (Z-Image Turbo) created.");
+  } else {
+    console.log("ComfyUI profile already exists, skipping.");
   }
 
   console.log(`Defaults ready for user: ${email}`);

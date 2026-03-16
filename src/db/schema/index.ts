@@ -6,6 +6,8 @@ import {
   timestamp,
   pgEnum,
   primaryKey,
+  jsonb,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -74,11 +76,36 @@ export const settings = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.key] })]
 );
 
+export const comfyuiProfiles = pgTable(
+  "comfyui_profiles",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    baseUrl: text("base_url").notNull(),
+    workflowJson: jsonb("workflow_json").notNull(),
+    img2imgWorkflowJson: jsonb("img2img_workflow_json"),
+    outputNodeId: text("output_node_id").notNull().default("9"),
+    placeholders: jsonb("placeholders").notNull(),
+    img2imgPlaceholders: jsonb("img2img_placeholders"),
+    enhanceSystemPrompt: text("enhance_system_prompt"),
+    enhanceImg2ImgSystemPrompt: text("enhance_img2img_system_prompt"),
+    enhanceModel: text("enhance_model"),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.userId, t.name)]
+);
+
 // Relations (for Drizzle query builder)
 export const usersRelations = relations(users, ({ many }) => ({
   conversations: many(conversations),
   providers: many(providers),
   settings: many(settings),
+  comfyuiProfiles: many(comfyuiProfiles),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
@@ -99,4 +126,8 @@ export const providersRelations = relations(providers, ({ one }) => ({
 
 export const settingsRelations = relations(settings, ({ one }) => ({
   user: one(users, { fields: [settings.userId], references: [users.id] }),
+}));
+
+export const comfyuiProfilesRelations = relations(comfyuiProfiles, ({ one }) => ({
+  user: one(users, { fields: [comfyuiProfiles.userId], references: [users.id] }),
 }));

@@ -17,6 +17,8 @@ export interface ChatState {
   referenceImage: string | null;
   referenceImageName: string | null;
   imageDenoise: number;
+  activeImageProfileId: string | null;
+  activeImageProfileName: string | null;
   openDrawer: () => void;
   closeDrawer: () => void;
   toggleDrawer: () => void;
@@ -30,6 +32,7 @@ export interface ChatState {
   setReferenceImage: (dataUrl: string | null, name: string | null) => void;
   setImageDenoise: (value: number) => void;
   clearReferenceImage: () => void;
+  setActiveImageProfile: (id: string | null, name: string | null) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -45,6 +48,8 @@ export const useChatStore = create<ChatState>((set) => ({
   referenceImage: null,
   referenceImageName: null,
   imageDenoise: 0.65,
+  activeImageProfileId: null,
+  activeImageProfileName: null,
   openDrawer: () => set({ drawerOpen: true }),
   closeDrawer: () => set({ drawerOpen: false }),
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
@@ -61,4 +66,5 @@ export const useChatStore = create<ChatState>((set) => ({
   setReferenceImage: (dataUrl, name) => set({ referenceImage: dataUrl, referenceImageName: name }),
   setImageDenoise: (value) => set({ imageDenoise: value }),
   clearReferenceImage: () => set({ referenceImage: null, referenceImageName: null }),
+  setActiveImageProfile: (id, name) => set({ activeImageProfileId: id, activeImageProfileName: name }),
 }));

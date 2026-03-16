@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ComfyUIClient } from ".";
+import { ComfyUIClient, buildZImageTurboWorkflow, Z_IMAGE_TURBO_PLACEHOLDERS, Z_IMAGE_TURBO_OUTPUT_NODE } from ".";
 
 const BASE_URL = "http://localhost:8188";
 
@@ -7,17 +7,26 @@ function makeClient() {
   return new ComfyUIClient(BASE_URL);
 }
 
+function makeGenerateConfig(prompt = "a red cat", width = 512, height = 512) {
+  return {
+    workflowJson: buildZImageTurboWorkflow(),
+    placeholders: Z_IMAGE_TURBO_PLACEHOLDERS,
+    outputNodeId: Z_IMAGE_TURBO_OUTPUT_NODE,
+    values: { prompt, width, height },
+  };
+}
+
 describe("ComfyUIClient.isConnected", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("returns true when UNETLoader endpoint responds ok", async () => {
+  it("returns true when system_stats endpoint responds ok", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
 
     const client = makeClient();
     expect(await client.isConnected()).toBe(true);
-    expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/object_info/UNETLoader`);
+    expect(fetch).toHaveBeenCalledWith(`${BASE_URL}/system_stats`);
   });
 
   it("returns false when fetch throws", async () => {
@@ -111,7 +120,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("a red cat", 512, 512);
+    const promise = client.generate(makeGenerateConfig("a red cat", 512, 512));
 
     await vi.advanceTimersByTimeAsync(1_000);
 
@@ -156,7 +165,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("mountain", 1024, 1024);
+    const promise = client.generate(makeGenerateConfig("mountain", 1024, 1024));
     await vi.advanceTimersByTimeAsync(1_000);
     await promise;
 
@@ -169,7 +178,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
     const client = makeClient();
-    await expect(client.generate("test", 512, 512)).rejects.toThrow(
+    await expect(client.generate(makeGenerateConfig("test", 512, 512))).rejects.toThrow(
       "ComfyUI prompt submission failed: 500"
     );
   });
@@ -195,7 +204,7 @@ describe("ComfyUIClient.generate", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    const promise = client.generate("slow", 512, 512);
+    const promise = client.generate(makeGenerateConfig("slow", 512, 512));
     const assertion = expect(promise).rejects.toThrow("ComfyUI generation timed out");
 
     await vi.advanceTimersByTimeAsync(121_000);

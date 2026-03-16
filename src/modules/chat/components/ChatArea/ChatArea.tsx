@@ -52,7 +52,7 @@ async function readStream(
 
 export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
   const router = useRouter();
-  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight, previewMode } =
+  const { activeModel, activeProvider, setStreamingMessageId, imageWidth, imageHeight, previewMode, activeImageProfileId } =
     useChatStore();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [streaming, setStreaming] = useState(false);
@@ -300,6 +300,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
           signal: abortController.signal,
           body: JSON.stringify({
             prompt, conversationId, width, height, chatHistory, preview: previewMode,
+            ...(activeImageProfileId ? { profileId: activeImageProfileId } : {}),
             ...(referenceImage ? { referenceImage, denoise } : {}),
           }),
         });
@@ -374,6 +375,7 @@ export function ChatArea({ conversationId, initialMessages }: ChatAreaProps) {
             chatHistory,
             skipUserMessage: true,
             replaceMessageId: messageId,
+            ...(activeImageProfileId ? { profileId: activeImageProfileId } : {}),
           }),
         });
 

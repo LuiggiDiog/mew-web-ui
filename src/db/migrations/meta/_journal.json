@@ -22,6 +22,20 @@
       "when": 1773364867716,
       "tag": "0002_rapid_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773631355340,
+      "tag": "0003_square_vampiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773631683897,
+      "tag": "0004_magical_puppet_master",
+      "breakpoints": true
     }
   ]
 }

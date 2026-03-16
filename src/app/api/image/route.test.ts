@@ -10,6 +10,7 @@ const {
   mockOllamaChat,
   mockWriteFile,
   mockMkdir,
+  mockFindDefaultProfile,
 } = vi.hoisted(() => ({
   mockSession: { userId: "user-1", email: "test@test.com", displayName: "Test" },
   mockInsertValues: vi.fn(),
@@ -20,7 +21,26 @@ const {
   mockOllamaChat: vi.fn(),
   mockWriteFile: vi.fn(),
   mockMkdir: vi.fn(),
+  mockFindDefaultProfile: vi.fn(),
 }));
+
+const mockProfile = {
+  id: "profile-1",
+  userId: "user-1",
+  name: "Z-Image Turbo",
+  baseUrl: "http://localhost:8188",
+  workflowJson: { "6": { class_type: "CLIPTextEncode", inputs: { text: "" } } },
+  img2imgWorkflowJson: null,
+  outputNodeId: "9",
+  placeholders: { positivePrompt: { nodeId: "6", field: "text" } },
+  img2imgPlaceholders: null,
+  enhanceSystemPrompt: null,
+  enhanceImg2ImgSystemPrompt: null,
+  enhanceModel: null,
+  isDefault: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 vi.mock("@/modules/auth/services/api-auth", () => ({
   getApiSession: vi.fn().mockResolvedValue({ session: mockSession, error: null }),
@@ -38,6 +58,7 @@ vi.mock("@/db/schema", () => ({
   conversations: {},
   messages: {},
   settings: {},
+  comfyuiProfiles: {},
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -45,10 +66,17 @@ vi.mock("drizzle-orm", () => ({
   and: vi.fn(),
 }));
 
+vi.mock("@/modules/providers/repositories/comfyui-profiles-repository", () => ({
+  findDefaultProfile: mockFindDefaultProfile,
+  findProfileById: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/modules/providers/services/comfyui", () => ({
   ComfyUIClient: vi.fn().mockImplementation(function () {
-    return { generate: mockComfyGenerate };
+    return { generate: mockComfyGenerate, uploadImage: vi.fn() };
   }),
+  ENHANCE_SYSTEM_PROMPT: "default enhance prompt",
+  ENHANCE_IMG2IMG_SYSTEM_PROMPT: "default img2img prompt",
 }));
 
 vi.mock("@/modules/providers/services/ollama", () => ({
@@ -79,6 +107,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   vi.mocked(getApiSession).mockResolvedValue({ session: mockSession, error: null });
+  mockFindDefaultProfile.mockResolvedValue(mockProfile);
 
   vi.mocked(db.insert).mockReturnValue({ values: mockInsertValues } as never);
   mockInsertValues.mockImplementation((values: unknown) => {
@@ -171,6 +200,19 @@ describe("POST /api/image", () => {
     await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
   });
 
+  it("returns 422 when no profile is configured", async () => {
+    mockFindDefaultProfile.mockResolvedValue(undefined);
+
+    const req = new Request("http://localhost/api/image", {
+      method: "POST",
+      body: JSON.stringify({ prompt: "hello" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await POST(req as never);
+    expect(res.status).toBe(422);
+  });
+
   it("uses existing conversation and stores user + assistant image messages", async () => {
     mockWhere
       .mockResolvedValueOnce([{ id: OWNED_CONV_ID, userId: mockSession.userId }])
@@ -194,7 +236,11 @@ describe("POST /api/image", () => {
       fullHeight: 1024,
     });
 
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a cat on a sofa", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: expect.objectContaining({ prompt: "a cat on a sofa", width: 1024, height: 1024 }),
+      })
+    );
     expect(mockWriteFile).toHaveBeenCalledWith(expect.stringContaining("generated"), expect.any(Buffer));
 
     expect(mockInsertValues).toHaveBeenCalledWith(
@@ -248,7 +294,9 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 576, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ width: 1024, height: 576 }) })
+    );
   });
 
   it("uses default 1024×1024 when dimensions are omitted", async () => {
@@ -259,7 +307,9 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ width: 1024, height: 1024 }) })
+    );
   });
 
   it("uses default 1024×1024 when dimensions are out of range", async () => {
@@ -270,7 +320,9 @@ describe("POST /api/image", () => {
     });
 
     await POST(req as never);
-    expect(mockComfyGenerate).toHaveBeenCalledWith("a city skyline", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ width: 1024, height: 1024 }) })
+    );
   });
 
   it("returns 504 on ComfyUI timeout", async () => {
@@ -325,7 +377,9 @@ describe("POST /api/image", () => {
       "llama3.2"
     );
 
-    expect(mockComfyGenerate).toHaveBeenCalledWith("enhanced final prompt", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ prompt: "enhanced final prompt" }) })
+    );
   });
 
   it("does not call Ollama when enhancePrompt is missing", async () => {
@@ -340,7 +394,9 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).not.toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ prompt: "original prompt" }) })
+    );
   });
 
   it("does not call Ollama when enhancePrompt is false", async () => {
@@ -355,7 +411,9 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).not.toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ prompt: "original prompt" }) })
+    );
   });
 
   it("falls back to original prompt if Ollama enhancement fails", async () => {
@@ -377,6 +435,8 @@ describe("POST /api/image", () => {
     await POST(req as never);
 
     expect(mockOllamaChat).toHaveBeenCalled();
-    expect(mockComfyGenerate).toHaveBeenCalledWith("original prompt", 1024, 1024, undefined);
+    expect(mockComfyGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ values: expect.objectContaining({ prompt: "original prompt" }) })
+    );
   });
 });

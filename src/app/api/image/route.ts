@@ -11,123 +11,26 @@ import {
   findConversationByIdForUser,
   updateConversationPreviewByIdForUser,
 } from "@/modules/conversations/repositories/conversations-repository";
-import { ComfyUIClient } from "@/modules/providers/services/comfyui";
+import { ComfyUIClient, ENHANCE_SYSTEM_PROMPT, ENHANCE_IMG2IMG_SYSTEM_PROMPT } from "@/modules/providers/services/comfyui";
 import { OllamaClient } from "@/modules/providers/services/ollama";
 import { getSettingsMapByUserId } from "@/modules/settings/repositories/settings-repository";
+import {
+  findProfileById,
+  findDefaultProfile,
+  type PlaceholderMap,
+} from "@/modules/providers/repositories/comfyui-profiles-repository";
 import { isUuid } from "@/modules/shared/utils/uuid";
 import { DEFAULT_MODEL } from "@/modules/shared/constants";
 import { env } from "@/env";
 
 const MAX_PROMPT_LENGTH = 2_000;
-const COMFYUI_MODEL_LABEL = "z-image-turbo";
-
-const ENHANCE_SYSTEM_PROMPT = `You are a prompt enhancer for Z-Image Turbo.
-Turn the user's input into a single final image-generation prompt in English.
-
-Your priority is: preserve the user's intent first, enrich only where it helps.
-
-Follow these rules strictly:
-
-1. Identify and preserve every immutable element from the user's prompt:
-   - main subject and subject count
-   - action, pose, expression, and state
-   - named characters, brands, IPs, products, or specific objects
-   - explicitly requested colors, clothing, props, symbols, setting, era, framing, or angle
-   - every piece of text that must appear inside the image
-   Never remove, rename, paraphrase, or contradict these.
-
-2. If the request is abstract, conceptual, or solution-oriented instead of a direct scene description,
-   silently invent one clear, concrete visual scenario that best expresses the request before enriching it.
-
-3. Add only supportive detail:
-   physical traits, materials, textures, lighting, atmosphere, color relationships, background, spatial depth,
-   composition, and environmental context.
-
-4. Use camera, lens, and photographic language only when it improves the result.
-   For posters, packaging, logos, UI, diagrams, menus, typography, product renders, or graphic design tasks,
-   prioritize layout, hierarchy, readability, placement, surface finish, and design structure instead of cinematic jargon.
-
-5. If visible text must appear in the image, reproduce it exactly and wrap each literal text string in double quotes.
-   Also describe where the text appears, its size, style, material, and layout.
-   Never invent text unless the user's request clearly implies it.
-
-6. If the user asks for a minimal, simple, flat, icon-like, clean, or product-focused image,
-   keep the prompt restrained, precise, and uncluttered.
-   Do not force cinematic, ornate, or overly dramatic detail.
-
-7. Write in clear, literal, visual English prose.
-   Avoid metaphor, poetic language, vague hype, and meta tags such as:
-   masterpiece, best quality, 8k, trending on artstation, award-winning, ultra detailed.
-
-8. Do not add extra people, objects, actions, emotions, story beats, or symbolism unless they are clearly implied by the user's request.
-
-9. If the user's prompt is already detailed and well-structured, refine it lightly instead of rewriting it aggressively.
-
-10. Adapt the length to the request:
-   - simple/minimal prompts: 60-100 words
-   - normal scenes: 100-160 words
-   - complex or text-heavy scenes: 140-220 words
-   Stay shorter when simplicity is part of the request.
-
-11. You may receive prior conversation messages for context before the current request.
-    Use them to understand references like "add X to it", "make it more Y", "now change the background to Z", or "remove the X".
-    The conversation history tells you what the user previously requested and what was generated.
-    Incorporate relevant context from prior messages into the new prompt, but always treat the latest user message as the primary intent.
-    If there is no prior context, treat the current request as standalone.
-
-Output only the final enhanced prompt as one plain paragraph.
-No explanations.
-No markdown.
-No lists.
-No quotation marks around the whole output.`;
-
-const ENHANCE_IMG2IMG_SYSTEM_PROMPT = `You are a prompt enhancer for Z-Image Turbo image-to-image generation.
-The user has provided a reference image and wants to modify it. Your job is to turn their modification request into a clear, concrete image-generation prompt.
-
-Your priority is: understand what they want to change about the reference image, then write a prompt that describes the desired final result.
-
-Follow these rules strictly:
-
-1. The user's message describes what they want to CHANGE, ADD, or REMOVE from their reference image.
-   Interpret instructions like "make it red", "add sunglasses", "remove the background", "make it look like winter" as edits to the existing image.
-
-2. Write a prompt that describes the FINAL desired image, not the edit operation itself.
-   Bad: "Change the background to a beach"
-   Good: "A person standing on a sandy beach with turquoise ocean waves and clear blue sky, golden sunlight"
-
-3. Preserve elements from the user's description that should remain unchanged.
-   If they say "make the cat wear a hat", the prompt should still describe the cat — just now wearing a hat.
-
-4. If the user gives a detailed or specific instruction, follow it precisely.
-   If the user gives a vague instruction like "make it better" or "improve it", enhance the overall quality descriptors: lighting, detail, composition, atmosphere.
-
-5. Use prior conversation messages for context when available.
-   The conversation history tells you what images were previously generated and what changes were requested.
-   Build on this context to understand iterative refinements.
-
-6. Keep prompts concise and focused on visual attributes:
-   - Simple edits (color change, add object): 40-80 words
-   - Moderate changes (style transfer, scene change): 80-140 words
-   - Complex transformations: 120-180 words
-
-7. Write in clear, literal, visual English prose.
-   Avoid metaphor, poetic language, and meta tags like masterpiece, best quality, 8k, trending.
-
-8. Do not add extra elements, people, objects, or dramatic changes unless the user requests them.
-   The reference image is the baseline — respect it.
-
-Output only the final enhanced prompt as one plain paragraph.
-No explanations.
-No markdown.
-No lists.
-No quotation marks around the whole output.`;
 
 function normalizeEnhancedPrompt(text: string): string {
   return text
     .replace(/^```(?:text|markdown)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .replace(/^(enhanced prompt|prompt)\s*:\s*/i, "")
-    .replace(/^["'“”]+|["'“”]+$/g, "")
+    .replace(/^["'""]+|["'""]+$/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -141,7 +44,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { prompt, conversationId, width, height, chatHistory, seed, preview, skipUserMessage, replaceMessageId, referenceImage, denoise } = body as {
+  const {
+    prompt,
+    conversationId,
+    width,
+    height,
+    chatHistory,
+    seed,
+    preview,
+    skipUserMessage,
+    replaceMessageId,
+    referenceImage,
+    denoise,
+    profileId,
+  } = body as {
     prompt?: string;
     conversationId?: string;
     width?: number;
@@ -153,6 +69,7 @@ export async function POST(request: NextRequest) {
     replaceMessageId?: string;
     referenceImage?: string;
     denoise?: number;
+    profileId?: string;
   };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
@@ -186,6 +103,18 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Load the image profile
+  const profile = profileId && isUuid(profileId)
+    ? await findProfileById(session.userId, profileId)
+    : await findDefaultProfile(session.userId);
+
+  if (!profile) {
+    return NextResponse.json(
+      { error: "No ComfyUI profile configured. Please add one in Settings." },
+      { status: 422 },
+    );
+  }
+
   let convId = conversationId;
 
   if (convId) {
@@ -199,7 +128,7 @@ export async function POST(request: NextRequest) {
     const newConv = await createConversation({
       userId: session.userId,
       title,
-      model: COMFYUI_MODEL_LABEL,
+      model: profile.name,
       provider: "comfyui",
     });
 
@@ -233,15 +162,14 @@ export async function POST(request: NextRequest) {
 
   const settingsMap = await getSettingsMapByUserId(session.userId);
 
-  console.log("settingsMap.enhancePrompt:", settingsMap.enhancePrompt);
-
   if (settingsMap.enhancePrompt === "true") {
-    console.log("Enhancing prompt via Ollama...");
-
-    const enhanceModel = settingsMap.defaultModel ?? DEFAULT_MODEL;
-    console.log("Using enhance model:", enhanceModel);
-
+    const enhanceModel = profile.enhanceModel ?? settingsMap.defaultModel ?? DEFAULT_MODEL;
     const ollamaClient = new OllamaClient(env.ollamaBaseUrl);
+
+    // Use profile's custom system prompts if set, fall back to built-in defaults
+    const systemPrompt = referenceImage
+      ? (profile.enhanceImg2ImgSystemPrompt ?? ENHANCE_IMG2IMG_SYSTEM_PROMPT)
+      : (profile.enhanceSystemPrompt ?? ENHANCE_SYSTEM_PROMPT);
 
     try {
       let enhanced = "";
@@ -253,7 +181,7 @@ export async function POST(request: NextRequest) {
 
       for await (const chunk of ollamaClient.chat(
         [
-          { role: "system", content: referenceImage ? ENHANCE_IMG2IMG_SYSTEM_PROMPT : ENHANCE_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...historyMessages,
           { role: "user", content: inputPrompt },
         ],
@@ -263,24 +191,18 @@ export async function POST(request: NextRequest) {
       }
 
       const cleanedEnhanced = normalizeEnhancedPrompt(enhanced);
-
-      if (cleanedEnhanced) {
-        finalPrompt = cleanedEnhanced;
-      }
-    } catch (error) {
-      console.error("Prompt enhancement failed:", error);
-      // Fall back to the original prompt
+      if (cleanedEnhanced) finalPrompt = cleanedEnhanced;
+    } catch (enhanceError) {
+      console.error("Prompt enhancement failed:", enhanceError);
+      // Fall back to original prompt
     }
   }
 
-  console.log("Final prompt for ComfyUI:", finalPrompt);
-
-  const comfyClient = new ComfyUIClient(env.comfyuiBaseUrl);
+  const comfyClient = new ComfyUIClient(profile.baseUrl);
 
   const imgWidth = typeof width === "number" && width >= 512 && width <= 2048 ? width : 1024;
   const imgHeight = typeof height === "number" && height >= 512 && height <= 2048 ? height : 1024;
 
-  // Preview mode: generate at ~50% resolution for speed, rounded to nearest 8
   const actualWidth = preview ? Math.max(256, Math.round(imgWidth / 2 / 8) * 8) : imgWidth;
   const actualHeight = preview ? Math.max(256, Math.round(imgHeight / 2 / 8) * 8) : imgHeight;
 
@@ -290,15 +212,48 @@ export async function POST(request: NextRequest) {
   let usedSeed: number;
 
   try {
-    if (referenceImage) {
+    const isImg2Img = !!referenceImage && !!profile.img2imgWorkflowJson;
+    const workflowJson = isImg2Img
+      ? (profile.img2imgWorkflowJson as object)
+      : (profile.workflowJson as object);
+    const placeholders = isImg2Img
+      ? ((profile.img2imgPlaceholders ?? profile.placeholders) as PlaceholderMap)
+      : (profile.placeholders as PlaceholderMap);
+
+    if (isImg2Img && referenceImage) {
+      // Upload reference image to ComfyUI first
       const base64Data = referenceImage.split(",")[1];
       const refBuffer = Buffer.from(base64Data, "base64");
+      const uploadFilename = `img2img_${crypto.randomUUID()}.png`;
+      const uploadedName = await comfyClient.uploadImage(refBuffer, uploadFilename);
+
       const validDenoise = typeof denoise === "number" ? Math.max(0.1, Math.min(1.0, denoise)) : 0.65;
-      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generateImg2Img(
-        finalPrompt, refBuffer, actualWidth, actualHeight, inputSeed, validDenoise,
-      ));
+
+      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate({
+        workflowJson,
+        placeholders,
+        outputNodeId: profile.outputNodeId,
+        values: {
+          prompt: finalPrompt,
+          width: actualWidth,
+          height: actualHeight,
+          seed: inputSeed,
+          denoise: validDenoise,
+          referenceImage: uploadedName,
+        },
+      }));
     } else {
-      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate(finalPrompt, actualWidth, actualHeight, inputSeed));
+      ({ buffer: imageBuffer, seed: usedSeed } = await comfyClient.generate({
+        workflowJson,
+        placeholders,
+        outputNodeId: profile.outputNodeId,
+        values: {
+          prompt: finalPrompt,
+          width: actualWidth,
+          height: actualHeight,
+          seed: inputSeed,
+        },
+      }));
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -320,7 +275,6 @@ export async function POST(request: NextRequest) {
   await mkdir(generatedDir, { recursive: true });
   await writeFile(path.join(generatedDir, filename), imageBuffer);
 
-  // Encode seed + full dimensions into URL so the frontend can offer an upscale action
   const imageUrl = preview
     ? `/generated/${filename}?s=${usedSeed}&fw=${imgWidth}&fh=${imgHeight}`
     : `/generated/${filename}`;
@@ -332,7 +286,7 @@ export async function POST(request: NextRequest) {
       conversationId: convId,
       role: "assistant",
       content: imageUrl,
-      model: COMFYUI_MODEL_LABEL,
+      model: profile.name,
       type: "image",
     });
   }
