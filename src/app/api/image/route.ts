@@ -257,6 +257,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    console.error("ComfyUI generation error:", msg);
 
     if (msg.includes("timed out")) {
       return NextResponse.json(
@@ -265,7 +266,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ error: "ComfyUI unreachable" }, { status: 503 });
+    return NextResponse.json(
+      { error: msg.includes("fetch") || msg.includes("ECONNREFUSED") ? "ComfyUI unreachable" : `ComfyUI error: ${msg}` },
+      { status: 503 },
+    );
   }
 
   const imageId = crypto.randomUUID();

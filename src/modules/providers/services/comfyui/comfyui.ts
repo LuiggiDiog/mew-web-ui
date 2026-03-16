@@ -327,7 +327,8 @@ export class ComfyUIClient {
       body: JSON.stringify({ prompt: workflow, client_id: clientId }),
     });
     if (!submitRes.ok) {
-      throw new Error(`ComfyUI prompt submission failed: ${submitRes.status}`);
+      const errorBody = await submitRes.text().catch(() => "");
+      throw new Error(`ComfyUI prompt submission failed (${submitRes.status}): ${errorBody}`);
     }
     const { prompt_id } = await submitRes.json();
 
