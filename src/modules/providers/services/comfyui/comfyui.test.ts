@@ -175,11 +175,18 @@ describe("ComfyUIClient.generate", () => {
   });
 
   it("throws when prompt submission fails", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve("internal error"),
+      })
+    );
 
     const client = makeClient();
     await expect(client.generate(makeGenerateConfig("test", 512, 512))).rejects.toThrow(
-      "ComfyUI prompt submission failed: 500"
+      "ComfyUI prompt submission failed (500): internal error"
     );
   });
 

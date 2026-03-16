@@ -350,7 +350,7 @@ describe("POST /api/image", () => {
 
     const res = await POST(req as never);
     expect(res.status).toBe(503);
-    await expect(res.json()).resolves.toEqual({ error: "ComfyUI unreachable" });
+    await expect(res.json()).resolves.toEqual({ error: "ComfyUI error: connection refused" });
   });
 
   it("enhances prompt with Ollama when enhancePrompt is true", async () => {
