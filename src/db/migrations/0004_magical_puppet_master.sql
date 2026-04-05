@@ -1,0 +1,1 @@
+ALTER TABLE "comfyui_profiles" ADD COLUMN "img2img_placeholders" jsonb;

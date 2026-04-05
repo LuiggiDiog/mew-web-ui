@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mwuiGradient" x1="92" y1="118" x2="404" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D85DFF" />
+      <stop offset="50%" stop-color="#7D5CFF" />
+      <stop offset="100%" stop-color="#58C6FF" />
+    </linearGradient>
+    <linearGradient id="tailShade" x1="126" y1="388" x2="258" y2="454" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6F55F9" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#8A6DFF" stop-opacity="0.72" />
+    </linearGradient>
+    <radialGradient id="topHighlight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(324 138) rotate(136) scale(154 136)">
+      <stop offset="0%" stop-color="white" stop-opacity="0.42" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.22 0" result="glow" />
+      <feBlend in="SourceGraphic" in2="glow" mode="screen" />
+    </filter>
+  </defs>
+
+  <g filter="url(#softGlow)">
+    <path d="M154 388C190 390 224 404 246 420C210 432 177 448 145 469C134 477 120 469 120 456V398C120 392 125 387 132 387L154 388Z" fill="url(#tailShade)" />
+    <path d="M144 178C138 126 156 92 186 92C210 92 240 122 258 146C280 126 308 92 336 92C368 92 387 126 376 178C410 209 430 251 430 300C430 377 377 429 300 431L240 437C208 441 176 452 145 469C134 476 120 468 120 455V404C88 377 72 340 72 298C72 252 90 212 122 182C129 178 136 176 144 178Z" fill="url(#mwuiGradient)" />
+    <path d="M144 178C138 126 156 92 186 92C210 92 240 122 258 146C280 126 308 92 336 92C368 92 387 126 376 178C410 209 430 251 430 300C430 377 377 429 300 431L240 437C208 441 176 452 145 469C134 476 120 468 120 455V404C88 377 72 340 72 298C72 252 90 212 122 182C129 178 136 176 144 178Z" fill="url(#topHighlight)" />
+    <path d="M174 284L252 352L349 253" stroke="#070A12" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

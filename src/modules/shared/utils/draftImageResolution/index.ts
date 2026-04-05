@@ -1,0 +1,2 @@
+export { getDraftImageDimensions } from "./draftImageResolution";
+
